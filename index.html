@@ -235,6 +235,11 @@ table.lv tr.isbreak td{background:color-mix(in srgb,var(--accent) 9%,transparent
   border-top:1px solid var(--line);border-bottom:1px solid var(--line);
   background:color-mix(in srgb,var(--accent) 7%,transparent);border-radius:7px}
 .breaktag{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.grip{display:inline-grid;place-items:center;width:28px;height:28px;color:var(--muted);cursor:grab;touch-action:none;border-radius:8px}
+.grip:hover{color:var(--ink);background:var(--surface)}
+.grip:active{cursor:grabbing}
+table.lv tr.dragging td{background:color-mix(in srgb,var(--accent) 20%,var(--bg2));opacity:.95}
+table.lv tr.dragging .grip{color:var(--accent)}
 .warnnote{font-size:12px;color:var(--muted);margin-top:8px}
 .disabled{opacity:.45;pointer-events:none}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:90;
@@ -496,7 +501,7 @@ var I18N = {
     import:"Import", imported:"Profiles imported.", badJson:"That text isn't a valid backup.",
     cantDelete:"The default profile can't be deleted.",
     slow:"Slow", standard:"Standard", turbo:"Turbo", hyper:"Hyper", custom:"Custom",
-    typeNum:"Type"
+    typeNum:"Type", dragBreak:"Drag to move this break"
   },
   vi:{
     level:"Level", brk:"Nghỉ", blinds:"Blind", ante:"Ante", afterBreak:"Sau giờ nghỉ",
@@ -520,7 +525,7 @@ var I18N = {
     import:"Nhập", imported:"Đã nhập hồ sơ.", badJson:"Đoạn text này không phải bản sao lưu hợp lệ.",
     cantDelete:"Không xoá được hồ sơ mặc định.",
     slow:"Chậm", standard:"Chuẩn", turbo:"Turbo", hyper:"Siêu nhanh", custom:"Tuỳ chỉnh",
-    typeNum:"Gõ số"
+    typeNum:"Gõ số", dragBreak:"Kéo để đổi vị trí giờ nghỉ"
   }
 };
 
@@ -1055,6 +1060,36 @@ function openWheel(input, field, title){
   setTimeout(function(){ document.addEventListener("pointerdown", wheelOutside, true); },0);
 }
 
+/* ---- drag a break row to another position ---- */
+function startRowDrag(tr, e, grip){
+  if(e.button && e.button!==0) return;
+  e.preventDefault();
+  closeWheel();
+  var tb=$("lvBody");
+  tr.classList.add("dragging");
+  try{ grip.setPointerCapture(e.pointerId); }catch(_){}
+
+  function move(ev){
+    var el=document.elementFromPoint(ev.clientX, ev.clientY);
+    var over=el && el.closest ? el.closest("tr") : null;
+    if(!over || over===tr || over.parentNode!==tb) return;
+    var r=over.getBoundingClientRect();
+    tb.insertBefore(tr, ev.clientY > r.top+r.height/2 ? over.nextSibling : over);
+  }
+  function up(){
+    grip.removeEventListener("pointermove", move);
+    grip.removeEventListener("pointerup", up);
+    grip.removeEventListener("pointercancel", up);
+    tr.classList.remove("dragging");
+    var old=edit.levels.slice();
+    edit.levels=Array.prototype.map.call(tb.children, function(row){ return old[+row.dataset.idx]; });
+    drawRows();
+  }
+  grip.addEventListener("pointermove", move);
+  grip.addEventListener("pointerup", up);
+  grip.addEventListener("pointercancel", up);
+}
+
 function drawRows(){
   closeWheel();
   var tb=$("lvBody"); tb.innerHTML="";
@@ -1070,8 +1105,12 @@ function drawRows(){
     var tr=document.createElement("tr");
     if(lv.brk) tr.className="isbreak";
     if(!lv.brk) n++;
+    tr.dataset.idx=i;
     if(lv.brk){
-      tr.innerHTML='<td class="lvno">—</td><td colspan="3"><span class="breaktag">'+t("brk")+'</span></td>'+
+      tr.innerHTML='<td class="lvno"><span class="grip" title="'+t("dragBreak")+'" aria-label="'+t("dragBreak")+'">'+
+        '<svg class="svgi" viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/>'+
+        '<circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg></span></td>'+
+        '<td colspan="3"><span class="breaktag">'+t("brk")+'</span></td>'+
         cell("min", lv.min, 'max="180"')+'<td class="lvact"></td>';
     }else{
       tr.innerHTML='<td class="lvno">'+n+'</td>'+
@@ -1094,6 +1133,8 @@ function drawRows(){
       edit.levels.splice(i,1);
       drawRows();
     };
+    var grip=tr.querySelector(".grip");
+    if(grip) grip.onpointerdown=function(e){ startRowDrag(tr, e, this); };
     tb.appendChild(tr);
   });
 }
