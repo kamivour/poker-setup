@@ -97,13 +97,15 @@ Giải đang chạy lưu ở `localStorage["pkclock2.run"]` dạng `{v:1, at, pi
 
 **Mỗi chữ số của đồng hồ nằm trong một `<span>` rộng cố định** (`.cd { width: .62em }`). Không tin vào `tabular-nums` của font — nếu font chưa load xong hoặc fallback sang font hệ thống, số 1 hẹp hơn số 0 và đồng hồ sẽ giật mỗi giây.
 
-**Prize làm tròn có bù.** Nhất = `round(pool × 0.7 / 1000) × 1000`, Nhì = `pool − Nhất`. Tính riêng từng giải rồi làm tròn cả hai sẽ có lúc tổng không khớp pool.
+**Prize làm tròn có bù.** Bước làm tròn tuỳ theo pool: `step = pool >= 50000 ? 1000 : 1`. Nhất = `round(pool × 0.7 / step) × step`, Nhì = `pool − Nhất`. Pool nhỏ thì làm tròn 1000 sẽ nuốt mất phần lớn tiền giải nhì, nên chỉ làm tròn khi pool đủ lớn. Nhì luôn tính bằng phần còn lại: tính riêng từng giải rồi làm tròn cả hai sẽ có lúc tổng không khớp pool.
 
 **Namespace `pkclock2`.** Đổi từ `pkclock` khi thay cấu trúc default, để profile cũ đã lưu không đè lên cái mới. Nếu sau này lại đổi default profile theo kiểu không tương thích thì bump lên `pkclock3`.
 
 **Khôi phục giải luôn ở trạng thái tạm dừng.** Khi mở lại trang, bản ghi `pkclock2.run` được đề nghị đúng một lần bằng thanh hỏi ở đáy màn hình. Bấm khôi phục thì level, thời gian còn lại và số entries quay về đúng chỗ cũ, nhưng đồng hồ không tự chạy tiếp — người tổ chức bấm play khi bàn đã sẵn sàng. Thời gian còn lại bị kẹp trong khoảng từ 0 đến độ dài của level, nên một bản ghi cũ không làm đồng hồ dài hơn level.
 
 **AudioContext chỉ mở sau cú chạm đầu tiên.** iOS Safari chặn phát âm thanh nếu không có user gesture. Vì vậy chuông báo chỉ kêu nếu người dùng đã bấm ít nhất một nút.
+
+**Chuông trên iPad cần ba thứ, thiếu một là im.** Một, lần chạm đầu tiên phải đẩy được một mẫu âm thanh im lặng qua context — iOS giữ context ở trạng thái câm cho tới khi nó thực sự phát ra cái gì đó trong lúc xử lý cử chỉ. Hai, context phải được gọi `resume()` lại khi rơi vào trạng thái `"interrupted"` (Siri, cuộc gọi, màn hình tắt); iOS không tự thoát khỏi trạng thái này, nên mọi cú chạm trên trang đều gọi `audioOn()`. Ba, iPad phải tắt chế độ im lặng: Web Audio đi qua audio session kiểu ambient, bị công tắc im lặng tắt luôn, và không có cách nào phát hiện điều đó từ JavaScript. Thả thanh âm lượng trong Cài đặt ra sẽ kêu thử một tiếng để kiểm tra cả ba.
 
 ### Phím tắt (laptop)
 
@@ -153,11 +155,8 @@ Ghi lại để lần sau khỏi đề xuất lại.
 
 Site chạy trên GitHub Pages, tên miền `www.kamivour.id.vn`.
 
-Chuyển domain từ repo cũ (`odin-recipes`) sang repo này:
+Tên miền do file `CNAME` ở gốc repo giữ, nội dung đúng một dòng `www.kamivour.id.vn`. Xoá file đó đi là GitHub bỏ luôn custom domain, nên đừng xoá.
 
-1. Repo cũ → Settings → Pages → **Remove** custom domain (đừng bấm Unpublish, site cũ vẫn sống ở `kamivour.github.io/odin-recipes`)
-2. Kiểm tra root branch `main` của repo cũ, nếu còn file `CNAME` thì xoá và commit — không nó tự set lại domain
-3. Repo này → Settings → Pages → chọn source `main` / `(root)` → điền `www.kamivour.id.vn` → Save
-4. Đợi DNS check xong rồi tick **Enforce HTTPS**
+Bản ghi DNS ở Tenten: `www` là CNAME trỏ về `kamivour.github.io`, apex là bốn bản ghi A của GitHub Pages. GitHub định tuyến domain theo repo ở tầng hạ tầng chứ không phải ở tầng DNS, nên khi đổi repo phục vụ tên miền thì không cần đụng gì đến DNS — chỉ cần repo cũ nhả tên miền ra (xoá `CNAME` của nó và bỏ custom domain trong Settings → Pages của nó), rồi repo mới nhận.
 
-Không cần sửa gì ở nhà cung cấp tên miền. GitHub định tuyến domain theo repo ở tầng hạ tầng, không phải ở tầng DNS, nên bản ghi CNAME trỏ `www` về `kamivour.github.io` giữ nguyên.
+`kamivour.github.io/poker-setup` giờ trả 301 về `www.kamivour.id.vn`.

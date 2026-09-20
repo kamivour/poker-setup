@@ -368,6 +368,7 @@ body.dragging-row .modal{overflow:hidden}
         <div><div class="rlabel" id="lblVolume">Volume</div></div>
         <input type="range" id="volume" min="0" max="100" step="5">
       </div>
+      <div class="rhint" id="hintVolume" style="margin:-6px 0 2px">Release the slider to hear a test chime.</div>
       <div class="row">
         <div><div class="rlabel" id="lblMute">Disable level-change alarm</div>
         <div class="rhint" id="hintMute">The one-minute warning is muted too.</div></div>
@@ -512,7 +513,8 @@ var I18N = {
     slow:"Slow", standard:"Standard", turbo:"Turbo", hyper:"Hyper", custom:"Custom",
     typeNum:"Type", dragBreak:"Drag to move this break",
     chipup:"Colour up", resumeAsk:"Resume the tournament in progress?",
-    resumeYes:"Resume", resumeNo:"Dismiss"
+    resumeYes:"Resume", resumeNo:"Dismiss",
+    volHint:"Release the slider to hear a test chime. On iPad, Silent Mode mutes the chime as well."
   },
   vi:{
     level:"Level", brk:"Nghỉ", blinds:"Blind", ante:"Ante", afterBreak:"Sau giờ nghỉ",
@@ -538,7 +540,8 @@ var I18N = {
     slow:"Chậm", standard:"Chuẩn", turbo:"Turbo", hyper:"Siêu nhanh", custom:"Tuỳ chỉnh",
     typeNum:"Gõ số", dragBreak:"Kéo để đổi vị trí giờ nghỉ",
     chipup:"Đổi chip", resumeAsk:"Khôi phục giải đang dở?",
-    resumeYes:"Khôi phục", resumeNo:"Bỏ qua"
+    resumeYes:"Khôi phục", resumeNo:"Bỏ qua",
+    volHint:"Thả thanh trượt ra để nghe thử chuông. Trên iPad, chế độ im lặng tắt luôn tiếng chuông này."
   }
 };
 
@@ -646,13 +649,33 @@ function maybeResume(){
 document.addEventListener("visibilitychange", function(){ if(document.hidden) saveRun(); });
 
 /* ============ audio ============ */
-var actx=null;
+var actx=null, audioUnlocked=false;
 function audioOn(){
   try{
     if(!actx){ var C=window.AudioContext||window.webkitAudioContext; if(!C) return; actx=new C(); }
-    if(actx.state==="suspended") actx.resume();
+    /* iOS keeps a context mute until it has played something while a gesture
+       is being handled, so push one silent sample through it the first time.
+       Starting a source on a context that is still suspended is fine: it
+       plays as soon as the resume below lands. */
+    if(!audioUnlocked){
+      var b=actx.createBufferSource();
+      b.buffer=actx.createBuffer(1,1,actx.sampleRate);
+      b.connect(actx.destination);
+      b.start(0);
+      audioUnlocked=true;
+    }
+    /* Not just "suspended": iOS also parks the context in the non-standard
+       state "interrupted" after Siri, a call, or the screen going off, and it
+       never leaves that state on its own. */
+    if(actx.state!=="running" && actx.resume) actx.resume();
   }catch(e){}
 }
+/* Any tap is a chance to create or revive the context, not only the transport
+   buttons — on iPad the alarm is otherwise silent for the rest of the night
+   after a single interruption. */
+document.addEventListener("touchend", function(){ audioOn(); }, {passive:true});
+document.addEventListener("pointerdown", function(){ audioOn(); }, {passive:true});
+document.addEventListener("visibilitychange", function(){ if(!document.hidden) audioOn(); });
 function tone(freq, start, dur, vol){
   if(!actx) return;
   try{
@@ -789,7 +812,7 @@ function applyLang(){
     lblEntries:"entries", lblPool:"pool", lblPayouts:"payouts",
     lbl1st:"first", lbl2nd:"second",
     stTitle:"settings", secTheme:"theme", secLang:"language", secSound:"sound",
-    lblVolume:"volume", lblMute:"mute", hintMute:"muteHint",
+    lblVolume:"volume", hintVolume:"volHint", lblMute:"mute", hintMute:"muteHint",
     lblPlaylist:"playlist", hintPlaylist:"soon", secDisplay:"display",
     lblAwake:"awake", hintAwake:"awakeHint", btnSettingsDone:"done",
     edTitle:"editProfile", secBasics:"tournament", lblPName:"pname", lblStack:"stack",
@@ -996,8 +1019,12 @@ for(var li=0;li<langBtns.length;li++){
 $("volume").value=settings.volume;
 $("volume").oninput=function(){ settings.volume=+this.value; lsSet(K.settings,settings); };
 $("volume").onchange=function(){ audioOn(); chimeWarn(); };
+$("volume").onchange=function(){ audioOn(); chimeWarn(); };
 $("muteAlarm").checked=!!settings.muteAlarm;
-$("muteAlarm").onchange=function(){ settings.muteAlarm=this.checked; lsSet(K.settings,settings); };
+$("muteAlarm").onchange=function(){
+  settings.muteAlarm=this.checked; lsSet(K.settings,settings);
+  if(!this.checked){ audioOn(); chimeWarn(); }
+};
 $("keepAwake").checked=!!settings.keepAwake;
 $("keepAwake").onchange=function(){
   settings.keepAwake=this.checked; lsSet(K.settings,settings);
