@@ -235,11 +235,14 @@ table.lv tr.isbreak td{background:color-mix(in srgb,var(--accent) 9%,transparent
   border-top:1px solid var(--line);border-bottom:1px solid var(--line);
   background:color-mix(in srgb,var(--accent) 7%,transparent);border-radius:7px}
 .breaktag{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
-.grip{display:inline-grid;place-items:center;width:28px;height:28px;color:var(--muted);cursor:grab;touch-action:none;border-radius:8px}
+.grip{display:inline-grid;place-items:center;width:34px;height:34px;color:var(--muted);cursor:grab;border-radius:8px;
+  touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .grip:hover{color:var(--ink);background:var(--surface)}
 .grip:active{cursor:grabbing}
 table.lv tr.dragging td{background:color-mix(in srgb,var(--accent) 20%,var(--bg2));opacity:.95}
 table.lv tr.dragging .grip{color:var(--accent)}
+body.dragging-row{-webkit-user-select:none;user-select:none}
+body.dragging-row .modal{overflow:hidden}
 .warnnote{font-size:12px;color:var(--muted);margin-top:8px}
 .disabled{opacity:.45;pointer-events:none}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:90;
@@ -1002,6 +1005,7 @@ function closeWheel(){
   if(!wheel) return;
   wheel.el.remove();
   document.removeEventListener("pointerdown", wheelOutside, true);
+  document.removeEventListener("touchstart", wheelOutside, true);
   wheel=null;
 }
 function wheelOutside(e){
@@ -1057,37 +1061,71 @@ function openWheel(input, field, title){
     input.focus(); input.select();
   };
   wheel={el:pop, input:input};
-  setTimeout(function(){ document.addEventListener("pointerdown", wheelOutside, true); },0);
+  setTimeout(function(){
+    document.addEventListener("pointerdown", wheelOutside, true);
+    document.addEventListener("touchstart", wheelOutside, true);
+  },0);
 }
 
-/* ---- drag a break row to another position ---- */
-function startRowDrag(tr, e, grip){
-  if(e.button && e.button!==0) return;
+/* ---- drag a break row to another position ----
+   Touch Events, not Pointer Events: iOS Safari cancels a captured pointer
+   as soon as it decides the gesture might be a scroll. */
+function startRowDrag(tr, e){
+  var touch = e.type==="touchstart";
+  if(!touch && e.button) return;
+  var id = touch ? e.changedTouches[0].identifier : null;
   e.preventDefault();
   closeWheel();
-  var tb=$("lvBody");
-  tr.classList.add("dragging");
-  try{ grip.setPointerCapture(e.pointerId); }catch(_){}
 
-  function move(ev){
-    var el=document.elementFromPoint(ev.clientX, ev.clientY);
-    var over=el && el.closest ? el.closest("tr") : null;
-    if(!over || over===tr || over.parentNode!==tb) return;
-    var r=over.getBoundingClientRect();
-    tb.insertBefore(tr, ev.clientY > r.top+r.height/2 ? over.nextSibling : over);
+  var tb=$("lvBody"), doc=document;
+  tr.classList.add("dragging");
+  doc.body.classList.add("dragging-row");
+
+  function at(ev){
+    if(!touch) return ev.clientY;
+    var list=ev.touches.length?ev.touches:ev.changedTouches;
+    for(var i=0;i<list.length;i++) if(list[i].identifier===id) return list[i].clientY;
+    return null;
   }
-  function up(){
-    grip.removeEventListener("pointermove", move);
-    grip.removeEventListener("pointerup", up);
-    grip.removeEventListener("pointercancel", up);
+  function move(ev){
+    var y=at(ev);
+    if(y==null) return;
+    if(ev.cancelable) ev.preventDefault();
+    var rows=tb.children;
+    for(var i=0;i<rows.length;i++){
+      var row=rows[i];
+      if(row===tr) continue;
+      var r=row.getBoundingClientRect();
+      if(y>=r.top && y<=r.bottom){
+        tb.insertBefore(tr, y > r.top+r.height/2 ? row.nextSibling : row);
+        break;
+      }
+    }
+  }
+  function up(ev){
+    if(touch && at(ev)==null && ev.type!=="touchcancel") return;
+    if(touch){
+      doc.removeEventListener("touchmove", move, {passive:false});
+      doc.removeEventListener("touchend", up);
+      doc.removeEventListener("touchcancel", up);
+    }else{
+      doc.removeEventListener("mousemove", move);
+      doc.removeEventListener("mouseup", up);
+    }
     tr.classList.remove("dragging");
+    doc.body.classList.remove("dragging-row");
     var old=edit.levels.slice();
     edit.levels=Array.prototype.map.call(tb.children, function(row){ return old[+row.dataset.idx]; });
     drawRows();
   }
-  grip.addEventListener("pointermove", move);
-  grip.addEventListener("pointerup", up);
-  grip.addEventListener("pointercancel", up);
+  if(touch){
+    doc.addEventListener("touchmove", move, {passive:false});
+    doc.addEventListener("touchend", up);
+    doc.addEventListener("touchcancel", up);
+  }else{
+    doc.addEventListener("mousemove", move);
+    doc.addEventListener("mouseup", up);
+  }
 }
 
 function drawRows(){
@@ -1125,7 +1163,7 @@ function drawRows(){
       inp.onkeydown=function(){ if(wheel && wheel.input===this) closeWheel(); };
       if(COARSE){
         inp.readOnly=true;
-        inp.onpointerdown=function(e){ e.preventDefault(); openWheel(inp, f, titles[f]); };
+        inp.onclick=function(){ openWheel(inp, f, titles[f]); };
       }
       w.querySelector(".wchev").onclick=function(){ openWheel(inp, f, titles[f]); };
     });
@@ -1134,7 +1172,10 @@ function drawRows(){
       drawRows();
     };
     var grip=tr.querySelector(".grip");
-    if(grip) grip.onpointerdown=function(e){ startRowDrag(tr, e, this); };
+    if(grip){
+      grip.addEventListener("touchstart", function(e){ startRowDrag(tr, e); }, {passive:false});
+      grip.addEventListener("mousedown", function(e){ startRowDrag(tr, e); });
+    }
     tb.appendChild(tr);
   });
 }
