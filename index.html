@@ -209,10 +209,16 @@ table.lv td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:midd
 table.lv td input{padding:6px 8px;border-radius:8px;width:100%}
 table.lv tr.isbreak td{background:color-mix(in srgb,var(--accent) 9%,transparent)}
 .lvno{font-family:Outfit,sans-serif;color:var(--muted);width:44px;font-size:13px}
-.lvact{white-space:nowrap;width:52px;text-align:right}
+.lvact{white-space:nowrap;width:86px;text-align:right}
 .mini{width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;line-height:0}
 .mini:hover{color:var(--ink);background:var(--surface)}
 .mini.x:hover{color:var(--crit)}
+.mini.on{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.chipflag{display:inline-block;vertical-align:-.14em;width:1em;height:1em;color:var(--accent);stroke-width:1.9}
+.resumebar{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:92;
+  display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);
+  background:var(--surface);border:1px solid var(--line);color:var(--ink);
+  padding:10px 12px;border-radius:12px;font-size:13.5px;box-shadow:0 14px 40px rgba(0,0,0,.4)}
 .cellw{position:relative;display:flex;align-items:center}
 .cellw input{padding-right:24px}
 .wchev{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:19px;height:19px;padding:0;border:0;background:none;color:var(--muted);cursor:pointer;display:grid;place-items:center}
@@ -504,7 +510,9 @@ var I18N = {
     import:"Import", imported:"Profiles imported.", badJson:"That text isn't a valid backup.",
     cantDelete:"The default profile can't be deleted.",
     slow:"Slow", standard:"Standard", turbo:"Turbo", hyper:"Hyper", custom:"Custom",
-    typeNum:"Type", dragBreak:"Drag to move this break"
+    typeNum:"Type", dragBreak:"Drag to move this break",
+    chipup:"Colour up", resumeAsk:"Resume the tournament in progress?",
+    resumeYes:"Resume", resumeNo:"Dismiss"
   },
   vi:{
     level:"Level", brk:"Nghỉ", blinds:"Blind", ante:"Ante", afterBreak:"Sau giờ nghỉ",
@@ -528,7 +536,9 @@ var I18N = {
     import:"Nhập", imported:"Đã nhập hồ sơ.", badJson:"Đoạn text này không phải bản sao lưu hợp lệ.",
     cantDelete:"Không xoá được hồ sơ mặc định.",
     slow:"Chậm", standard:"Chuẩn", turbo:"Turbo", hyper:"Siêu nhanh", custom:"Tuỳ chỉnh",
-    typeNum:"Gõ số", dragBreak:"Kéo để đổi vị trí giờ nghỉ"
+    typeNum:"Gõ số", dragBreak:"Kéo để đổi vị trí giờ nghỉ",
+    chipup:"Đổi chip", resumeAsk:"Khôi phục giải đang dở?",
+    resumeYes:"Khôi phục", resumeNo:"Bỏ qua"
   }
 };
 
@@ -552,7 +562,8 @@ function defaultProfile(){
 }
 
 /* ============ storage ============ */
-var K={profiles:"pkclock2.profiles", settings:"pkclock2.settings", active:"pkclock2.active"};
+var K={profiles:"pkclock2.profiles", settings:"pkclock2.settings", active:"pkclock2.active",
+       run:"pkclock2.run"};
 function lsGet(k,fb){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):fb; }catch(e){ return fb; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 
@@ -579,6 +590,60 @@ function nextPlayableAfter(i){
   for(var j=i+1;j<profile().levels.length;j++){ if(!profile().levels[j].brk) return profile().levels[j]; }
   return null;
 }
+
+/* ---- the running tournament, saved so a reload can pick it up ----
+   iPadOS Safari discards a backgrounded tab when memory runs short, which
+   loses the level and the remaining time in the middle of a game. The saved
+   run is offered once on load and always comes back paused: the clock never
+   restarts by itself. */
+var runReady=false, lastRunSave=0;
+function saveRun(){
+  if(!runReady) return;
+  lsSet(K.run, {v:1, at:Date.now(), pid:activeId, idx:state.idx,
+                remain:Math.round(state.remain), running:state.running,
+                endsAt:state.endsAt, entries:state.entries});
+}
+function clearRun(){ try{ localStorage.removeItem(K.run); }catch(e){} }
+
+function applyRun(r){
+  activeId=r.pid; lsSet(K.active,activeId);
+  state.entries=Math.max(0, r.entries|0);
+  state.idx=Math.max(0, Math.min(r.idx|0, profile().levels.length-1));
+  var rem = (r.running && r.endsAt) ? (r.endsAt-Date.now())/1000 : r.remain;
+  state.remain=Math.max(0, Math.min(durSec(state.idx), rem||0));
+  state.running=false; state.endsAt=null;
+  state.warned = state.remain<=60;
+  render(); saveRun();
+}
+
+function askResume(onYes){
+  var bar=document.createElement("div");
+  bar.className="resumebar";
+  var msg=document.createElement("span"); msg.textContent=t("resumeAsk");
+  var yes=document.createElement("button"); yes.className="btn sm primary"; yes.textContent=t("resumeYes");
+  var no=document.createElement("button"); no.className="btn sm quiet"; no.textContent=t("resumeNo");
+  bar.appendChild(msg); bar.appendChild(yes); bar.appendChild(no);
+  document.body.appendChild(bar);
+  function close(){ if(bar.parentNode) bar.parentNode.removeChild(bar); }
+  yes.onclick=function(){ close(); onYes(); };
+  no.onclick=function(){ close(); clearRun(); };
+}
+
+function maybeResume(){
+  var r=lsGet(K.run,null);
+  runReady=true;
+  if(!r || r.v!==1) return;
+  if(Date.now()-(r.at||0) > 6*3600*1000){ clearRun(); return; }
+  if(!profiles.some(function(p){ return p.id===r.pid; })){ clearRun(); return; }
+  var keep=activeId; activeId=r.pid;
+  var i=Math.max(0, Math.min(r.idx|0, profile().levels.length-1));
+  var started = r.running || i>0 || r.remain < durSec(i)-1;
+  activeId=keep;
+  if(!started){ clearRun(); return; }
+  askResume(function(){ applyRun(r); });
+}
+
+document.addEventListener("visibilitychange", function(){ if(document.hidden) saveRun(); });
 
 /* ============ audio ============ */
 var actx=null;
@@ -627,6 +692,9 @@ function toast(msg){
   clearTimeout(toastT); toastT=setTimeout(function(){ el.hidden=true; },2400);
 }
 
+var SVG_CHIP_PATH='<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="3.4"/>'+
+  '<path d="M12 3.4v2.6M12 18v2.6M3.4 12h2.6M18 12h2.6"/>';
+var SVG_CHIP='<svg class="svgi chipflag" viewBox="0 0 24 24">'+SVG_CHIP_PATH+'</svg>';
 var SVG_PLAY='<svg class="svgi" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z" fill="currentColor" stroke="none"/></svg>';
 var SVG_PAUSE='<svg class="svgi" viewBox="0 0 24 24"><rect x="7" y="5" width="3.6" height="14" rx="1.2" fill="currentColor" stroke="none"/><rect x="13.4" y="5" width="3.6" height="14" rx="1.2" fill="currentColor" stroke="none"/></svg>';
 
@@ -674,7 +742,7 @@ function render(){
     $("lblAnte").textContent=t("ante");
     $("nextLine").textContent="";
   }else{
-    $("eyebrow").textContent=t("level")+" "+levelNumber(state.idx);
+    $("eyebrow").innerHTML=t("level")+" "+levelNumber(state.idx)+(it.chipup?" "+SVG_CHIP:"");
     $("lblBlinds").textContent=t("blinds");
     $("lblAnte").textContent=t("ante");
     $("valBlinds").innerHTML=nf(it.sb)+'<span class="sl">/</span><span class="bb">'+nf(it.bb)+'</span>';
@@ -687,6 +755,7 @@ function render(){
     else {
       var s=t("next")+' · <b>'+nf(n.sb)+'/'+nf(n.bb)+'</b>';
       if(n.ante) s+=' · '+t("ante").toLowerCase()+' '+nf(n.ante);
+      if(n.chipup) s+=' '+SVG_CHIP;
       $("nextLine").innerHTML=s;
     }
   }
@@ -761,20 +830,20 @@ function loadLevel(i, autostart){
   state.remain=durSec(state.idx);
   state.warned=false;
   if(state.running && autostart!==false){ state.endsAt=Date.now()+state.remain*1000; }
-  render();
+  render(); saveRun();
 }
 function play(){
   audioOn();
   state.running=true;
   state.endsAt=Date.now()+state.remain*1000;
   wakeReq();
-  render();
+  render(); saveRun();
 }
 function pause(){
   state.running=false;
   state.endsAt=null;
   wakeRel();
-  render();
+  render(); saveRun();
 }
 function toggle(){ state.running?pause():play(); }
 
@@ -799,6 +868,7 @@ setInterval(function(){
     state.remain=r;
   }
   render();
+  if(state.running && Date.now()-lastRunSave>5000){ lastRunSave=Date.now(); saveRun(); }
 },250);
 
 /* ============ controls ============ */
@@ -814,7 +884,7 @@ $("btnReset").onclick=function(){
   var b=this;
   if(resetArmed){
     clearTimeout(resetArmed); resetArmed=null; b.classList.remove("armed");
-    pause(); state.entries=0; loadLevel(0,false);
+    pause(); state.entries=0; loadLevel(0,false); clearRun();
     return;
   }
   b.classList.add("armed");
@@ -826,7 +896,7 @@ var cbtns=document.querySelectorAll(".cbtn");
 for(var ci=0;ci<cbtns.length;ci++){
   cbtns[ci].onclick=function(){
     state.entries=Math.max(0,state.entries+parseInt(this.dataset.d,10));
-    render();
+    render(); saveRun();
   };
 }
 
@@ -1156,7 +1226,11 @@ function drawRows(){
         cell("min", lv.min, 'max="180"')+'<td class="lvact"></td>';
     }
     var act=tr.querySelector(".lvact");
-    act.innerHTML='<button class="mini x" data-a="del" aria-label="delete"><svg class="svgi" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>';
+    act.innerHTML=(lv.brk ? "" :
+        '<button class="mini chip'+(lv.chipup?" on":"")+'" data-a="chip" title="'+t("chipup")+
+        '" aria-label="'+t("chipup")+'"><svg class="svgi" viewBox="0 0 24 24" style="width:16px;height:16px">'+
+        SVG_CHIP_PATH+'</svg></button>')+
+      '<button class="mini x" data-a="del" aria-label="delete"><svg class="svgi" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M18 6L6 18M6 6l12 12"/></svg></button>';
     tr.querySelectorAll(".cellw").forEach(function(w){
       var inp=w.querySelector("input"), f=inp.dataset.f;
       inp.oninput=function(){ edit.levels[i][f]=Math.max(0,+this.value||0); };
@@ -1167,9 +1241,14 @@ function drawRows(){
       }
       w.querySelector(".wchev").onclick=function(){ openWheel(inp, f, titles[f]); };
     });
-    act.querySelector("button").onclick=function(){
+    act.querySelector('[data-a="del"]').onclick=function(){
       edit.levels.splice(i,1);
       drawRows();
+    };
+    var chipBtn=act.querySelector('[data-a="chip"]');
+    if(chipBtn) chipBtn.onclick=function(){
+      edit.levels[i].chipup=!edit.levels[i].chipup;
+      this.classList.toggle("on", !!edit.levels[i].chipup);
     };
     var grip=tr.querySelector(".grip");
     if(grip){
@@ -1252,6 +1331,7 @@ $("btnImport").onclick=function(){
 applyTheme();
 applyLang();
 loadLevel(0,false);
+maybeResume();
 })();
 </script>
 

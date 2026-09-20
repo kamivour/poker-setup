@@ -31,6 +31,8 @@ Tôi tổ chức MTT ở homegame và cần một cái clock chiếu lên iPad h
 - Profile: tạo mới, nhân bản, sửa, xoá; sinh cấu trúc blind tự động từ 4 tham số
 - 5 theme màu, 2 ngôn ngữ (EN / Tiếng Việt)
 - Wake Lock giữ màn hình sáng khi đồng hồ chạy
+- Đánh dấu level cần đổi chip (chip-up); icon chip hiện cạnh số level và ở dòng preview level kế tiếp
+- Lưu giải đang chạy; mở lại trang trong vòng 6 tiếng sẽ hỏi có khôi phục không
 - Export/import profile dạng JSON
 
 ---
@@ -79,12 +81,15 @@ Profile lưu ở `localStorage["pkclock2.profiles"]`:
   breakMin: 10,      // thời lượng break mặc định khi thêm dòng break
   levels: [
     { sb: 100, bb: 200, ante: 200, min: 20 },
+    { sb: 200, bb: 400, ante: 400, min: 20, chipup: true },  // level cần đổi chip
     { brk: true, min: 10 }            // dòng break
   ]
 }
 ```
 
 Settings ở `localStorage["pkclock2.settings"]`, profile đang chọn ở `localStorage["pkclock2.active"]`.
+
+Giải đang chạy lưu ở `localStorage["pkclock2.run"]` dạng `{v:1, at, pid, idx, remain, running, endsAt, entries}`. Ghi lại mỗi 5 giây khi đồng hồ chạy, mỗi lần đổi level hoặc đổi số entries, và lúc tab bị ẩn đi.
 
 ### Vài quyết định kỹ thuật, đừng sửa mà không đọc lý do
 
@@ -95,6 +100,8 @@ Settings ở `localStorage["pkclock2.settings"]`, profile đang chọn ở `loca
 **Prize làm tròn có bù.** Nhất = `round(pool × 0.7 / 1000) × 1000`, Nhì = `pool − Nhất`. Tính riêng từng giải rồi làm tròn cả hai sẽ có lúc tổng không khớp pool.
 
 **Namespace `pkclock2`.** Đổi từ `pkclock` khi thay cấu trúc default, để profile cũ đã lưu không đè lên cái mới. Nếu sau này lại đổi default profile theo kiểu không tương thích thì bump lên `pkclock3`.
+
+**Khôi phục giải luôn ở trạng thái tạm dừng.** Khi mở lại trang, bản ghi `pkclock2.run` được đề nghị đúng một lần bằng thanh hỏi ở đáy màn hình. Bấm khôi phục thì level, thời gian còn lại và số entries quay về đúng chỗ cũ, nhưng đồng hồ không tự chạy tiếp — người tổ chức bấm play khi bàn đã sẵn sàng. Thời gian còn lại bị kẹp trong khoảng từ 0 đến độ dài của level, nên một bản ghi cũ không làm đồng hồ dài hơn level.
 
 **AudioContext chỉ mở sau cú chạm đầu tiên.** iOS Safari chặn phát âm thanh nếu không có user gesture. Vì vậy chuông báo chỉ kêu nếu người dùng đã bấm ít nhất một nút.
 
@@ -122,15 +129,23 @@ Xếp theo mức độ tôi thấy cần.
 
 **Tách rebuy khỏi buy-in.** Hiện `entries` là một con số duy nhất. Nếu muốn biết "12 người, 18 lượt mua" thì cần hai bộ đếm riêng, và rake có thể tính khác nhau giữa buy-in và rebuy.
 
-**Lưu trạng thái đang chạy.** Cố ý bỏ qua. Refresh giữa giải là mất level và thời gian còn lại. Nếu thấy phiền thì lưu `{idx, remain, running, endsAt, entries}` vào `localStorage` mỗi vài giây và hỏi "khôi phục giải đang dở?" lúc mở lại.
-
 **Đồng bộ qua mạng.** Không định làm. Export/import JSON là cách chuyển profile giữa máy. Nếu có ngày cần thật thì Cloudflare Workers + KV là phương án free hợp lý nhất, nhưng đổi lại phải quản key trong code client.
 
 **Toàn màn hình trên iPad.** Nút fullscreen dùng Fullscreen API, iPadOS Safari hỗ trợ không ổn định. Cách chắc ăn hiện tại là Share → Add to Home Screen, mở từ icon sẽ chạy đúng chuẩn standalone (meta đã khai báo sẵn).
 
-**Chip-up / colour-up.** Khi blind lên cao thì cần đổi chip mệnh giá nhỏ. Clock chưa nhắc gì.
+**Ước lượng giờ kết thúc.** Cộng thời lượng các level còn lại để hiện "dự kiến xong lúc 23:40". Ý tưởng hay nhưng chưa có cách làm cho nó đúng: homegame gần như luôn kết thúc trước level cuối, nên con số cộng thuần từ bảng level sẽ sai thường xuyên và làm người ta tin nhầm. Chỉ làm khi nghĩ ra cách ước lượng bám theo thực tế.
 
-**Ước lượng giờ kết thúc.** Cộng thời lượng các level còn lại để hiện "dự kiến xong lúc 23:40". Rẻ và hữu ích khi có người hỏi mấy giờ về.
+---
+
+## 4b. Đã cân nhắc và quyết định không làm
+
+Ghi lại để lần sau khỏi đề xuất lại.
+
+**Đếm số người còn lại, stack trung bình, BB trung bình.** Không có ai bấm nút trừ đúng lúc một người bị loại, nên con số sẽ sai gần như ngay lập tức. Sai còn tệ hơn không có. Ba chuỗi dịch `left`, `avg`, `chips` trong `I18N` là tàn dư của ý tưởng này.
+
+**Hiện giờ vào lại sau giờ nghỉ (kiểu "vào lại lúc 22:10").** Đồng hồ đếm ngược đã đủ. Thêm dòng nữa chỉ làm rối màn hình, đi ngược mục tiêu tối giản.
+
+**Payout cấu hình nhiều mức giải.** Bàn nhà chỉ 6 đến 9 người, trả hai giải là hợp lý. 70/30 cứng vẫn đúng với cách chơi hiện tại.
 
 ---
 
