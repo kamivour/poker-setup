@@ -1,6 +1,6 @@
 # Homegame Blind Clock
 
-Đồng hồ blind cho giải poker MTT chơi ở homegame. Một file HTML tĩnh, deploy bằng GitHub Pages lên `www.kamivour.id.vn`.
+Đồng hồ blind cho giải poker MTT chơi ở homegame. Site tĩnh gồm bốn file (HTML, CSS, JS và một shader nền), không có build step, deploy bằng GitHub Pages lên `www.kamivour.id.vn`.
 
 ---
 
@@ -29,7 +29,7 @@ Tôi tổ chức MTT ở homegame và cần một cái clock chiếu lên iPad h
 - Break là một dòng trong bảng level; khi đang break màn hình đổi sang hiện blind sẽ vào sau khi nghỉ
 - Đếm entries (+/−), tính prize pool đã trừ rake, chia Nhất 70% / Nhì 30%
 - Profile: tạo mới, nhân bản, sửa, xoá; sinh cấu trúc blind tự động từ 4 tham số. Hồ sơ `default` chỉ đọc — muốn khác thì nhân bản ra rồi sửa bản sao
-- 5 theme màu, 2 ngôn ngữ (EN / Tiếng Việt). Bốn theme có nền trang trí riêng, đồng hồ đổ bóng nổi và nút điều khiển kiểu kính mờ có vệt sáng lướt qua khi rê chuột hoặc chạm; Midnight giữ nguyên kiểu phẳng 2D cho ai thích tối giản
+- 5 theme màu, 2 ngôn ngữ (EN / Tiếng Việt). Bốn theme có nền chuyển động vẽ bằng WebGL và mỗi theme một chất liệu đồng hồ riêng: Felt chữ ngà đổ bóng xuống nỉ, Cafe chữ phát sáng như biển đèn, Bone chữ dập chìm trên giấy, Royal chữ mạ vàng có vệt sáng lướt qua. Số đổi thì lăn xuống, sang level thì dòng blind trồi lên, nút điều khiển kiểu kính mờ nhấc lên và loé sáng khi rê chuột hoặc chạm. Midnight giữ nguyên kiểu phẳng 2D cho ai thích tối giản
 - Wake Lock giữ màn hình sáng khi đồng hồ chạy
 - Đánh dấu level cần đổi chip (chip-up); icon chip hiện cạnh số level và ở dòng preview level kế tiếp
 - Lưu giải đang chạy; mở lại trang trong vòng 6 tiếng sẽ hỏi có khôi phục không
@@ -41,26 +41,32 @@ Tôi tổ chức MTT ở homegame và cần một cái clock chiếu lên iPad h
 
 ```
 .
-├── index.html     # toàn bộ ứng dụng — markup + CSS + JS trong một file
+├── index.html     # markup; nạp style.css, rồi fx.js và app.js
+├── style.css      # toàn bộ CSS: token theme, layout, chất liệu đồng hồ, chuyển động
+├── app.js         # toàn bộ logic của clock — một IIFE ES5, không module, không framework
+├── fx.js          # nền chuyển động: một fragment shader WebGL, GLSL nhúng dạng chuỗi
 └── README.md      # file này
 ```
 
-Cố ý để một file. Không có build step, không có dependency ngoài Google Fonts. Muốn sửa gì thì mở `index.html` ra sửa rồi push, GitHub Pages tự deploy.
+Không có build step, không package manager, không dependency ngoài Google Fonts. Sửa xong thì push, GitHub Pages tự deploy. Một quy tắc duy nhất: **mỗi lần sửa `style.css`, `app.js` hay `fx.js` phải đổi số `?v=` ở ba link trong `index.html`** — GitHub Pages cache tài nguyên 10 phút và Safari trên iPad giữ lâu hơn, không đổi thì markup mới lên nhưng iPad vẫn chạy script cũ.
 
-### Bố cục bên trong `index.html`
+### Bố cục các file
 
-| Phần | Nội dung |
+| File / phần | Nội dung |
 |---|---|
-| `<head>` | meta cho iPad (`apple-mobile-web-app-capable`, safe-area), link Google Fonts |
-| `<style>` — themes | Token màu và token trang trí (`--decor*`, `--glass*`, `--clock-shadow`) cho 5 theme, đặt trên `:root` và `:root[data-app-theme="..."]` |
-| `<style>` — top bar / stage / stats / modals | CSS theo từng khu vực màn hình |
-| markup | `.app` là grid 3 hàng: topbar / stage / stats. Ba modal nằm ngoài `.app` |
-| `<script>` — i18n | Object `I18N` với 2 khoá `en` và `vi` |
+| `index.html` — `<head>` | meta cho iPad (`apple-mobile-web-app-capable`, safe-area), link Google Fonts, ba link có `?v=` |
+| `index.html` — markup | canvas `#fx` (nền, cố định sau mọi thứ, không nhận chạm) rồi `.app` là grid 3 hàng: topbar / stage / stats. Ba modal nằm ngoài `.app` |
+| `style.css` — theme tokens | Token màu cho 5 theme trên `:root` và `:root[data-app-theme="..."]`, kèm token trang trí: `--decor` (nền dự phòng khi không có WebGL), `--glass*` / `--sheen` (nút kính), `--clock-ink` / `--clock-fx` (chất liệu đồng hồ). Riêng Royal thêm `--gild-*` (các nấc màu vàng) và `--chips` (hai viên chip SVG) |
+| `style.css` — layout | CSS theo từng khu vực: top bar / stage / stats / modals |
+| `style.css` — decorated look | Khối `html:not(.flat)`: chất liệu đồng hồ từng theme, chữ mạ vàng của Royal, nút kính mờ, khung và chip của Royal |
+| `style.css` — motion | Số lăn khi đổi, dòng level trồi lên khi sang level, modal / menu / toast hiện ra. Tắt hết khi hệ thống bật giảm chuyển động |
+| `fx.js` | Một fragment shader vẽ cả màn hình theo theme (`SLOT` chọn nhánh: felt / bone / cafe / royal), crossfade 0,9 giây khi đổi theme. Chỉ lộ ra `PKFX.setTheme(id, flat)`. Không có WebGL thì gắn class `nofx` lên `<html>` và CSS hiện `--decor` thay thế |
+| `app.js` — i18n | Object `I18N` với 2 khoá `en` và `vi` |
 | — defaults | `defaultLevels()` và `defaultProfile()` |
 | — storage | Đọc/ghi `localStorage`, tất cả bọc trong try/catch |
 | — audio | Web Audio API, sinh tiếng chuông bằng oscillator, không tải file |
 | — wake lock | Xin và nhả Wake Lock, xin lại khi tab quay lại foreground |
-| — render | Một hàm `render()` vẽ lại toàn bộ UI từ state |
+| — render | Một hàm `render()` vẽ lại toàn bộ UI từ state. `applyTheme()` gắn `data-app-theme` và class `flat` lên `<html>` rồi gọi `PKFX.setTheme()` |
 | — clock engine | `setInterval` 250ms, tính thời gian còn lại từ timestamp |
 | — controls / overlays / profile menu / settings | Gắn event handler |
 | — profile editor | Bảng level, generator, lưu/xoá |
@@ -109,7 +115,9 @@ Giải đang chạy lưu ở `localStorage["pkclock2.run"]` dạng `{v:1, at, pi
 
 **Chuông trên iPad cần ba thứ, thiếu một là im.** Một, lần chạm đầu tiên phải đẩy được một mẫu âm thanh im lặng qua context — iOS giữ context ở trạng thái câm cho tới khi nó thực sự phát ra cái gì đó trong lúc xử lý cử chỉ. Hai, context phải được gọi `resume()` lại khi rơi vào trạng thái `"interrupted"` (Siri, cuộc gọi, màn hình tắt); iOS không tự thoát khỏi trạng thái này, nên mọi cú chạm trên trang đều gọi `audioOn()`. Ba, iPad phải tắt chế độ im lặng: Web Audio đi qua audio session kiểu ambient, bị công tắc im lặng tắt luôn, và không có cách nào phát hiện điều đó từ JavaScript. Thả thanh âm lượng trong Cài đặt ra sẽ kêu thử một tiếng để kiểm tra cả ba.
 
-**Trang trí theme chỉ bằng CSS, và tắt hẳn ở theme phẳng.** Nền (vignette, ánh đèn, hạt nhiễu) là gradient và SVG nhúng dạng data URI, vẽ lên `body::before` cố định phía sau mọi thứ; hai viên chip đỏ của Royal là nền của `.stage::after`, neo vào góc dưới phải của sân khấu nên luôn nằm gọn trên vạch chia của thanh thống kê, cách xa đồng hồ và các con số tiền thưởng — không có file ảnh, không thêm dependency ngoài, link Google Fonts vẫn là thứ duy nhất tải từ ngoài. Đồng hồ nổi bằng chồng `text-shadow` pha từ màu chữ hiện tại, nên vẫn đúng tông khi chuyển sang màu cảnh báo. Nút điều khiển kính mờ: rê chuột thì nhấc lên và có vệt sáng lướt qua; chạm trên iPad thì vệt sáng chạy bằng class `shine` vì iPad không có hover. Theme Midnight đặt `flat: true` trong `THEMES`, `applyTheme()` gắn class `flat` lên `<html>` và toàn bộ khối CSS trang trí bị bỏ qua — đó là lựa chọn 2D cho ai thích đơn giản. Vì bóng đổ trên chữ cỡ lớn tốn sức vẽ lại, `drawClock()` chỉ đụng DOM khi chuỗi giờ đổi, không phải mỗi nhịp 250 ms.
+**Nền chuyển động vẽ bằng WebGL, và tắt hẳn ở theme phẳng.** `fx.js` là một fragment shader vẽ cả màn hình lên canvas `#fx` nằm cố định sau mọi thứ và không nhận chạm: Felt là vệt đèn trên nỉ xanh, Cafe là bokeh và làn hơi trôi, Royal là bụi vàng với viền sáng quanh mép, Bone là giấy dưới ánh cửa sổ. Đổi theme thì hai nền crossfade ngay trong shader. Ngân sách vẽ giữ chặt để không ăn pin iPad giữa giải: canvas vẽ ở 0,6 lần độ phân giải CSS (trần 1,3 Mpx), tối đa 30 khung hình mỗi giây, dừng hẳn khi tab ẩn, và chỉ vẽ một khung tĩnh khi hệ thống bật giảm chuyển động. Mọi chuyển động trong shader tuần hoàn theo chu kỳ 600 giây và biến thời gian quay vòng ở 3600 giây, nên số thực không trôi sau ba tiếng chạy. Không có WebGL, máy phải render bằng phần mềm, shader không biên dịch được hay context bị mất thì `<html>` nhận class `nofx` và CSS hiện gradient tĩnh trong `--decor` thay thế — đồng hồ không bao giờ phụ thuộc vào canvas. Hai viên chip đỏ của Royal là SVG nhúng làm nền của `.stage::after`, neo vào góc dưới phải sân khấu nên nằm gọn trên vạch chia của thanh thống kê, cách xa đồng hồ và các con số tiền thưởng. Không có file ảnh, link Google Fonts vẫn là thứ duy nhất tải từ ngoài.
+
+**Mỗi theme một chất liệu đồng hồ, không dùng chung một kiểu bóng.** Mỗi theme đặt `--clock-ink` và `--clock-fx` riêng: Felt là chữ ngà có quầng mờ và bóng đổ xuống nỉ; Cafe là chữ phát sáng như biển đèn, màu sáng lấy từ màu chữ nên tự đổi sang đỏ khi cảnh báo; Bone là chữ dập chìm trên giấy; Royal là chữ mạ vàng năm nấc màu (đổi sang hổ phách rồi đỏ khi cảnh báo) với vệt sáng lướt qua mỗi 9 giây. Vàng của Royal vẽ bằng `::after` đọc từ `data-d` của từng ký tự, vì `text-shadow` sẽ đè lên gradient cắt theo chữ nếu đặt cùng một phần tử. Số đổi thì lăn từ trên xuống — `drawClock()` gắn class `tk` cho đúng ký tự đổi rồi gỡ khi hết hiệu ứng — và sang level thì dòng level, blind và preview trồi lên. Nút điều khiển kính mờ: rê chuột thì nhấc lên và có vệt sáng lướt qua; chạm trên iPad thì vệt sáng chạy bằng class `shine` vì iPad không có hover. Theme Midnight đặt `flat: true` trong `THEMES`, `applyTheme()` gắn class `flat` lên `<html>`, canvas tắt và toàn bộ khối CSS trang trí bị bỏ qua — đó là lựa chọn 2D cho ai thích đơn giản. Vì bóng đổ trên chữ cỡ lớn tốn sức vẽ lại, `drawClock()` chỉ ghi vào đúng những ký tự đổi, không phải mỗi nhịp 250 ms.
 
 ### Phím tắt (laptop)
 

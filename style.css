@@ -1,0 +1,449 @@
+/* Homegame Blind Clock — all styles.
+   Sections, in order: base → theme tokens → layout (top bar, stage, stats)
+   → decorated look → motion → modals → reduced motion.
+   The decorated look is scoped to html:not(.flat); app.js puts .flat on <html>
+   for any THEMES entry with flat:true (Midnight), which keeps the plain 2D look.
+   The animated backdrop is the #fx canvas painted by fx.js; html.nofx means
+   WebGL was unavailable and the CSS gradient in --decor is shown instead. */
+
+/* ---------- base ---------- */
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+
+/* ---------- theme tokens ----------
+   Colours first, then the decorated-look tokens each theme carries:
+   --decor          CSS fallback backdrop (WebGL unavailable)
+   --glass*, --sheen the transport buttons
+   --clock-ink      digit colour at rest (warn/crit still use --warn/--crit)
+   --clock-fx       the digit material: every theme gets its own kind of
+                    text-shadow, not the same stack with different numbers
+   Royal's digits are gilded (a gradient clipped to the glyphs) — see the
+   decorated-look block — so it carries --gild-* stops instead of a shadow. */
+:root{
+  color-scheme:dark;
+  --bg:#0B1410; --bg2:#101A15; --surface:#16231C; --line:#26382D;
+  --ink:#F3EFE3; --ink-dim:#B9C5BA; --muted:#7D8F82;
+  --accent:#D4A73C; --accent-ink:#1A1206;
+  --warn:#E0A64A; --crit:#E0644A;
+  --gold:#E3B94A; --silver:#C2C8CE;
+  /* Felt: a lamp over green baize. */
+  --decor:
+    radial-gradient(ellipse 70% 60% at 50% 40%,rgba(41,88,57,.95),rgba(24,56,38,.6) 45%,transparent 75%),
+    radial-gradient(ellipse 90% 90% at 50% 50%,transparent 40%,rgba(0,0,0,.6) 100%);
+  --glass:rgba(255,255,255,.07); --glass-line:rgba(255,255,255,.16); --glass-hi:rgba(255,255,255,.28);
+  --glass-shadow:rgba(0,0,0,.45); --sheen:rgba(255,255,255,.42);
+  /* Ivory under the lamp: a faint halo at the edge of each glyph and one
+     soft shadow cast onto the felt. */
+  --clock-ink:#F8F3E6;
+  --clock-fx:
+    0 0 .035em color-mix(in srgb,currentcolor 28%,transparent),
+    0 .025em .025em rgba(0,0,0,.28),
+    0 .11em .26em rgba(0,0,0,.42);
+}
+/* Midnight is the flat theme: THEMES marks it flat:true, so none of the
+   decorated-look rules apply and it needs none of those tokens. */
+:root[data-app-theme="midnight"]{
+  color-scheme:dark;
+  --bg:#0A0D13; --bg2:#0F141C; --surface:#151B25; --line:#242D3B;
+  --ink:#E9EDF4; --ink-dim:#A7B2C2; --muted:#6E7A8C;
+  --accent:#6AA9E0; --accent-ink:#06131F;
+  --warn:#E3B457; --crit:#E2705C;
+}
+:root[data-app-theme="bone"]{
+  color-scheme:light;
+  --bg:#F1EFE8; --bg2:#E9E6DD; --surface:#FFFFFF; --line:#D8D2C6;
+  --ink:#201E1A; --ink-dim:#4C4840; --muted:#847D71;
+  --accent:#BE2F33; --accent-ink:#FFF7F5;
+  --warn:#B07417; --crit:#A8241F;
+  --gold:#B08324; --silver:#8A9097;
+  /* Bone: warm paper under a window. */
+  --decor:
+    linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0) 40%),
+    radial-gradient(ellipse 90% 85% at 50% 50%,transparent 46%,rgba(120,95,55,.16) 100%);
+  --glass:rgba(255,255,255,.66); --glass-line:rgba(60,50,30,.16); --glass-hi:rgba(255,255,255,.95);
+  --glass-shadow:rgba(60,45,20,.22); --sheen:rgba(255,255,255,.9);
+  /* Letterpress: ink pressed into paper, lit from above. */
+  --clock-ink:#221F1A;
+  --clock-fx:
+    0 1px 0 rgba(255,255,255,.8),
+    0 .04em .1em rgba(60,45,20,.14);
+}
+:root[data-app-theme="cafe"]{
+  color-scheme:dark;
+  --bg:#191210; --bg2:#201815; --surface:#291F1A; --line:#3D2E25;
+  --ink:#F2E5D5; --ink-dim:#C6B09A; --muted:#937A62;
+  --accent:#D08A4A; --accent-ink:#1C1109;
+  --warn:#DCA55E; --crit:#D4644C;
+  /* Cafe: one amber lamp top-left, embers bottom-right. */
+  --decor:
+    radial-gradient(ellipse 60% 55% at 12% 0%,rgba(208,138,74,.26),transparent 70%),
+    radial-gradient(ellipse 55% 45% at 102% 104%,rgba(140,58,24,.36),transparent 70%),
+    radial-gradient(ellipse 90% 85% at 50% 50%,transparent 42%,rgba(0,0,0,.5) 100%);
+  --glass:rgba(255,225,190,.07); --glass-line:rgba(255,220,180,.18); --glass-hi:rgba(255,232,205,.28);
+  --glass-shadow:rgba(0,0,0,.5); --sheen:rgba(255,236,210,.42);
+  /* A lit sign: the glyphs glow in their own colour, so the warning and
+     critical colours glow too. */
+  --clock-ink:#FBEEDC;
+  --clock-fx:
+    0 0 .05em color-mix(in srgb,currentcolor 55%,transparent),
+    0 0 .18em color-mix(in srgb,currentcolor 30%,transparent),
+    0 0 .45em color-mix(in srgb,currentcolor 16%,transparent),
+    0 .04em .1em rgba(0,0,0,.35);
+}
+:root[data-app-theme="royal"]{
+  color-scheme:dark;
+  --bg:#170609; --bg2:#1F0A0E; --surface:#2A0E14; --line:#46191F;
+  --ink:#F8EFE6; --ink-dim:#D6B4AC; --muted:#A0737A;
+  --accent:#E0C158; --accent-ink:#1A0E05;
+  --warn:#E0C158; --crit:#EE6B5E;
+  /* Royal: gold light at the rim. The two red chips (--chips) are the
+     background of .stage::after, resting on the stats divider at the bottom
+     right, clear of the clock and the payouts. The gold frame is body::after. */
+  --chips:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3CradialGradient id='f' cx='.38' cy='.32' r='.8'%3E%3Cstop offset='0' stop-color='%23D9323E'/%3E%3Cstop offset='.55' stop-color='%23A61B27'/%3E%3Cstop offset='1' stop-color='%236E0E17'/%3E%3C/radialGradient%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.42'/%3E%3Cstop offset='1' stop-color='%23fff' stop-opacity='0'/%3E%3C/linearGradient%3E%3Cfilter id='s' x='-30%' y='-30%' width='160%' height='160%'%3E%3CfeGaussianBlur stdDeviation='5'/%3E%3C/filter%3E%3C/defs%3E%3Cg opacity='.85'%3E%3Cellipse cx='74' cy='84' rx='62' ry='58' fill='%23000' opacity='.55' filter='url(%23s)'/%3E%3Cg transform='rotate(14 70 74)'%3E%3Ccircle cx='70' cy='74' r='60' fill='%238F1420'/%3E%3Ccircle cx='70' cy='74' r='55.5' fill='none' stroke='%23F1E2C6' stroke-width='9' stroke-dasharray='15.7 27.9'/%3E%3Ccircle cx='70' cy='74' r='51' fill='url(%23f)'/%3E%3Ccircle cx='70' cy='74' r='37' fill='none' stroke='%23E0C158' stroke-width='1.8' opacity='.9'/%3E%3Ccircle cx='70' cy='74' r='32' fill='none' stroke='%23E0C158' stroke-width='.8' opacity='.5'/%3E%3C/g%3E%3Cellipse cx='128' cy='130' rx='68' ry='64' fill='%23000' opacity='.6' filter='url(%23s)'/%3E%3Cg transform='rotate(-9 124 120)'%3E%3Ccircle cx='124' cy='120' r='66' fill='%238F1420'/%3E%3Ccircle cx='124' cy='120' r='61' fill='none' stroke='%23F1E2C6' stroke-width='10' stroke-dasharray='17.2 30.7'/%3E%3Ccircle cx='124' cy='120' r='56' fill='url(%23f)'/%3E%3Ccircle cx='124' cy='120' r='41' fill='none' stroke='%23E0C158' stroke-width='2' opacity='.9'/%3E%3Ccircle cx='124' cy='120' r='35.5' fill='none' stroke='%23E0C158' stroke-width='.9' opacity='.5'/%3E%3Cellipse cx='108' cy='92' rx='34' ry='16' fill='url(%23h)' transform='rotate(-28 108 92)'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  --decor:
+    radial-gradient(ellipse 85% 80% at 50% 50%,transparent 52%,rgba(224,193,88,.14) 100%),
+    radial-gradient(ellipse 70% 45% at 50% -8%,rgba(255,214,120,.12),transparent 70%);
+  --glass:rgba(255,235,200,.06); --glass-line:rgba(224,193,88,.34); --glass-hi:rgba(255,240,200,.32);
+  --glass-shadow:rgba(0,0,0,.55); --sheen:rgba(255,240,200,.5);
+  /* Gilded digits: five stops of polished gold, painted by .cd::after. The
+     glyph itself is transparent and only casts the shadow, with a faint
+     gold halo. warn/crit swap the stops. */
+  --clock-ink:#F1D06A;
+  --clock-fx:
+    0 .03em .03em rgba(0,0,0,.4),
+    0 .12em .3em rgba(0,0,0,.55),
+    0 0 .5em rgba(243,212,112,.2);
+  --gild-a:#FFF7D6; --gild-b:#F3D470; --gild-c:#B98A2A; --gild-d:#F8E3A3; --gild-e:#A5761A;
+}
+:root[data-app-theme="royal"] .clock.warn{--gild-a:#FFE9B5; --gild-b:#F2B33B; --gild-c:#B0680C; --gild-d:#F7C862; --gild-e:#95560A}
+:root[data-app-theme="royal"] .clock.crit{--gild-a:#FFE0D6; --gild-b:#F49A82; --gild-c:#B7412D; --gild-d:#F8B49F; --gild-e:#9A2F1E}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+  transition:background-color .6s ease,color .4s ease;
+}
+button{font:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.svgi{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;padding:0 16px;--stats-gap:clamp(10px,2.4vh,26px)}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:center;gap:12px;padding-block:12px;min-height:58px}
+.iconbtn{width:46px;height:46px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink-dim);display:grid;place-items:center;cursor:pointer;
+  transition:color .25s,border-color .25s,background-color .25s,transform .35s cubic-bezier(.2,.8,.2,1)}
+.iconbtn:hover{color:var(--ink);border-color:var(--muted)}
+.topbar .grow{flex:1}
+.profilewrap{position:relative}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:10px 17px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;max-width:52vw;
+  transition:color .25s,border-color .25s,background-color .25s,box-shadow .35s,transform .35s cubic-bezier(.2,.8,.2,1)}
+.pill .pname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;font-size:15px}
+.pill .svgi{width:16px;height:16px;color:var(--muted)}
+.menu{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);min-width:240px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:6px;z-index:40;box-shadow:0 20px 50px rgba(0,0,0,.45);
+  animation:menupop .28s cubic-bezier(.16,1,.3,1)}
+.menu button{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;background:none;border:0;color:var(--ink-dim);padding:10px 12px;border-radius:9px;cursor:pointer;font-size:14px;text-align:left;transition:background-color .15s,color .15s}
+.menu button:hover{background:var(--surface);color:var(--ink)}
+.menu button[aria-current="true"]{color:var(--accent)}
+.menu .sep{height:1px;background:var(--line);margin:6px 4px}
+
+/* ---------- stage ---------- */
+.stage{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(4px,1.2vh,16px);min-height:0;text-align:center}
+.eyebrow{font-size:clamp(12px,2.2vh,21px);letter-spacing:.3em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.clock{font-family:Outfit,system-ui,sans-serif;font-weight:600;line-height:.9;font-size:clamp(3.5rem,min(28vw,36vh),24rem);cursor:pointer;user-select:none;display:flex;justify-content:center;letter-spacing:-.01em;
+  color:var(--clock-ink,var(--ink));transition:color .45s ease}
+.clock .cd{display:inline-block;width:.62em;text-align:center}
+.clock .cs{display:inline-block;width:.3em;text-align:center}
+.clock.warn{color:var(--warn)}
+.clock.crit{color:var(--crit);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.6}}
+
+.blinds{display:flex;align-items:flex-end;justify-content:center;gap:clamp(22px,6vw,86px);flex-wrap:wrap}
+.bcell{display:flex;flex-direction:column;gap:3px;align-items:center}
+.blabel{font-size:clamp(11px,1.8vh,16px);letter-spacing:.26em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.bval{font-family:Outfit,system-ui,sans-serif;font-weight:500;line-height:1;font-size:clamp(1.9rem,min(11vw,12.5vh),8.5rem);color:var(--ink-dim);transition:color .4s}
+.bval .bb{color:var(--accent);font-weight:600;transition:color .4s}
+.bval .sl{color:var(--muted);padding:0 .12em;font-weight:300}
+.nextline{font-size:clamp(12px,2vh,19px);color:var(--muted);letter-spacing:.07em}
+.nextline b{color:var(--ink-dim);font-weight:500}
+
+.transport{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:clamp(8px,2.2vw,20px);margin-top:clamp(4px,1.6vh,14px)}
+.tbtn{width:clamp(40px,min(11vw,7.5vh),62px);height:clamp(40px,min(11vw,7.5vh),62px);border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink-dim);display:grid;place-items:center;cursor:pointer;
+  transition:color .25s,border-color .25s,background-color .25s}
+.tbtn:hover{color:var(--ink);border-color:var(--muted)}
+.tbtn.primary{width:clamp(54px,min(15vw,10.5vh),86px);height:clamp(54px,min(15vw,10.5vh),86px);background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.tbtn.primary .svgi{width:clamp(22px,min(6vw,4.2vh),34px);height:clamp(22px,min(6vw,4.2vh),34px)}
+.tbtn .svgi{width:clamp(17px,min(4.4vw,3vh),26px);height:clamp(17px,min(4.4vw,3vh),26px)}
+.tbtn.reset{margin-left:clamp(6px,1.6vw,18px)}
+.tbtn.reset.armed{color:var(--crit);border-color:var(--crit)}
+.tbtn .glyph{font-family:Outfit,system-ui,sans-serif;font-weight:600;line-height:1;
+  font-size:clamp(17px,min(4.6vw,3.2vh),27px)}
+
+/* ---------- stats ---------- */
+.stats{display:grid;grid-template-columns:1fr 1.15fr 1.5fr;border-top:1px solid var(--line);margin-top:var(--stats-gap);padding-block:14px}
+.stat{padding:0 clamp(10px,1.6vw,20px);border-left:1px solid var(--line);min-width:0;display:flex;flex-direction:column;gap:6px}
+.stat:first-child{border-left:0;padding-left:0}
+.slabel{font-size:clamp(11px,1.5vh,14px);letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.counter{display:flex;align-items:center;gap:10px}
+.snum{font-family:Outfit,system-ui,sans-serif;font-size:clamp(1.5rem,4vh,2.7rem);font-weight:600;line-height:1;min-width:1.5ch}
+.cbtn{width:clamp(40px,5vh,46px);height:clamp(40px,5vh,46px);flex:0 0 auto;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink-dim);font-size:19px;line-height:0;display:grid;place-items:center;cursor:pointer;
+  transition:color .25s,border-color .25s,background-color .25s,transform .3s cubic-bezier(.2,.8,.2,1)}
+.cbtn:hover{color:var(--ink);border-color:var(--muted)}
+.cbtn:active{transform:scale(.92);transition-duration:.08s}
+.smoney{font-family:Outfit,system-ui,sans-serif;font-size:clamp(1.25rem,3.4vh,2.2rem);font-weight:500;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub{font-size:clamp(11.5px,1.5vh,14px);color:var(--muted);letter-spacing:.04em}
+.payout{display:flex;align-items:baseline;gap:10px;font-size:clamp(1.05rem,2.9vh,1.7rem);font-family:Outfit,system-ui,sans-serif}
+.payout .pk{font-family:"IBM Plex Sans",sans-serif;font-size:clamp(11px,1.4vh,13px);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);width:2.6em;flex:0 0 auto}
+.payout .pv{font-weight:500}
+.payout.first .pv{color:var(--ink);font-weight:600}
+.cup{width:clamp(17px,2.6vh,24px);height:clamp(17px,2.6vh,24px);flex:0 0 auto;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.payout.first .cup{stroke:var(--gold)}
+.payout.second .cup{stroke:var(--silver)}
+
+@media (max-width:720px){
+  .stats{grid-template-columns:1fr 1fr;gap:16px 0}
+  .stat{border-left:0;padding:0}
+  .stat:nth-child(2){padding-left:14px;border-left:1px solid var(--line)}
+  .stat:nth-child(3){grid-column:1 / -1;border-top:1px solid var(--line);padding-top:14px}
+}
+
+/* ---------- decorated look ----------
+   Skipped entirely on flat themes: every rule here is scoped to html:not(.flat).
+   The backdrop is the #fx canvas (fixed, behind everything, no pointer events),
+   so it can never add scroll or steal a tap. fx.js adds .on once it has drawn
+   a frame, which fades the canvas in over the plain background colour. */
+#fx{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;opacity:0;transition:opacity .9s ease}
+#fx.on{opacity:1}
+html.flat #fx{display:none}
+/* No WebGL: the gradient fallback in --decor stands in for the canvas. */
+html.nofx:not(.flat) body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--decor)}
+/* Royal: a thin double gold frame inside the safe area, like a table rail. */
+:root[data-app-theme="royal"]:not(.flat) body::after{content:"";position:fixed;z-index:-1;pointer-events:none;
+  inset:calc(env(safe-area-inset-top,0px) + 10px) 10px calc(env(safe-area-inset-bottom,0px) + 10px);
+  border:1px solid rgba(224,193,88,.32);border-radius:8px;outline:1px solid rgba(224,193,88,.12);outline-offset:4px}
+/* Royal: the chips hang off the right edge and rest on the stats divider.
+   They are the background of a box anchored to the stage, so they follow the
+   stats bar whatever its height. The box ends at the viewport edge and the
+   image overflows it, which crops the chips without adding horizontal
+   scroll. The visible width is a slice of the viewport width, which is what
+   keeps them off the ante figures on a 4:3 landscape screen; portrait has
+   more room beside the transport, so the slice is wider there. */
+:root[data-app-theme="royal"]:not(.flat) .stage{position:relative}
+:root[data-app-theme="royal"]:not(.flat) .stage::after{content:"";position:absolute;z-index:-1;pointer-events:none;
+  --chip:min(17vw,38vmin,30vh);--crop:8vmin;
+  right:-16px;bottom:calc(-1 * var(--stats-gap));width:var(--chip);height:calc(var(--chip) + var(--crop));
+  background:var(--chips) left bottom/calc(var(--chip) + var(--crop)) no-repeat}
+@media (orientation:portrait){ :root[data-app-theme="royal"]:not(.flat) .stage::after{--chip:min(24vw,22vh)} }
+
+/* Clock material. Each theme sets its own --clock-fx (see the tokens). */
+html:not(.flat) .clock{text-shadow:var(--clock-fx)}
+/* Royal: polished gold clipped to the glyphs. The glyph itself is transparent
+   and only casts the shadow (--clock-fx); the gold is a copy of the glyph
+   that ::after paints from data-d, because a text-shadow paints over a
+   gradient clipped to the same text. Each glyph carries the gradient on its
+   own; the gradient is vertical, so every glyph shows the same banding and
+   the row reads as one bar of gold. A second layer, a bright band three
+   boxes tall, slides down the glyphs every nine seconds: the gleam. */
+:root[data-app-theme="royal"]:not(.flat) .clock .cd,
+:root[data-app-theme="royal"]:not(.flat) .clock .cs{position:relative;color:transparent}
+:root[data-app-theme="royal"]:not(.flat) .clock .cd::after,
+:root[data-app-theme="royal"]:not(.flat) .clock .cs::after{
+  content:attr(data-d);position:absolute;inset:0;text-shadow:none;
+  background-image:
+    linear-gradient(180deg,transparent 38%,rgba(255,255,255,.55) 50%,transparent 62%),
+    linear-gradient(180deg,var(--gild-a) 0%,var(--gild-b) 34%,var(--gild-c) 52%,var(--gild-d) 66%,var(--gild-e) 100%);
+  background-size:100% 300%,100% 100%;
+  background-position:0 100%,0 0;
+  background-repeat:no-repeat;
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+  animation:gleam 9s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes gleam{0%,76%{background-position:0 100%,0 0}100%{background-position:0 0%,0 0}}
+
+/* Glass. The pill and the counters share the surface so the screen reads as
+   one material; only the transport lifts and shines. */
+html:not(.flat) .pill,html:not(.flat) .cbtn,html:not(.flat) .iconbtn{background-color:var(--glass);border-color:var(--glass-line);box-shadow:inset 0 1px 0 var(--glass-hi)}
+html:not(.flat) .tbtn{position:relative;overflow:hidden;
+  background-color:var(--glass);background-image:linear-gradient(165deg,var(--glass-hi) -20%,transparent 45%);
+  border-color:var(--glass-line);
+  box-shadow:inset 0 1px 0 var(--glass-hi),inset 0 -1px 0 rgba(0,0,0,.18),0 6px 16px -4px var(--glass-shadow);
+  backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%);
+  transition:transform .5s cubic-bezier(.16,1,.3,1),box-shadow .5s cubic-bezier(.16,1,.3,1),border-color .3s,color .3s,background-color .3s}
+html:not(.flat) .tbtn .svgi,html:not(.flat) .tbtn .glyph{transition:transform .5s cubic-bezier(.16,1,.3,1)}
+html:not(.flat) .tbtn.reset.armed{border-color:var(--crit)}
+html:not(.flat) .tbtn.primary{background-color:var(--accent);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,0) 55%,rgba(0,0,0,.1));
+  border-color:color-mix(in srgb,var(--accent) 65%,#fff);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -2px 0 rgba(0,0,0,.16),0 10px 24px -6px color-mix(in srgb,var(--accent) 60%,transparent),0 6px 14px -4px var(--glass-shadow);
+  backdrop-filter:none;-webkit-backdrop-filter:none}
+/* Sheen: a soft diagonal band that sweeps across the button once. Hover
+   starts it on pointer devices; a tap adds .shine (see app.js). */
+html:not(.flat) .tbtn::after{content:"";position:absolute;top:-30%;bottom:-30%;left:-60%;width:60%;
+  background:linear-gradient(105deg,transparent 20%,var(--sheen) 50%,transparent 80%);
+  transform:skewX(-18deg);opacity:0;pointer-events:none}
+html:not(.flat) .tbtn.shine::after{animation:sheen .8s cubic-bezier(.3,.6,.3,1)}
+@keyframes sheen{0%{transform:translateX(0) skewX(-18deg);opacity:0}20%{opacity:1}100%{transform:translateX(320%) skewX(-18deg);opacity:0}}
+@media (hover:hover){
+  html:not(.flat) .tbtn:hover{transform:translateY(-4px) scale(1.04);border-color:var(--glass-hi);
+    box-shadow:inset 0 1px 0 var(--glass-hi),inset 0 -1px 0 rgba(0,0,0,.18),0 16px 30px -8px var(--glass-shadow)}
+  html:not(.flat) .tbtn:hover .svgi,html:not(.flat) .tbtn:hover .glyph{transform:scale(1.08)}
+  html:not(.flat) .tbtn:hover::after{animation:sheen .8s cubic-bezier(.3,.6,.3,1)}
+  html:not(.flat) .tbtn.primary:hover{border-color:color-mix(in srgb,var(--accent) 45%,#fff);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 0 rgba(0,0,0,.16),0 18px 38px -8px color-mix(in srgb,var(--accent) 75%,transparent),0 12px 22px -6px var(--glass-shadow)}
+  html:not(.flat) .pill:hover,html:not(.flat) .iconbtn:hover,html:not(.flat) .cbtn:hover{border-color:var(--glass-hi);transform:translateY(-1px)}
+  html:not(.flat) .clock:hover{transform:scale(1.012)}
+}
+html:not(.flat) .tbtn:active{transform:translateY(0) scale(.94);transition-duration:.08s}
+html:not(.flat) .clock{transition:color .45s ease,transform .6s cubic-bezier(.16,1,.3,1)}
+html:not(.flat) .clock:active{transform:scale(.99);transition-duration:.1s}
+/* Stats: the divider fades out at both ends instead of running edge to edge. */
+html:not(.flat) .stats{border-top-color:transparent;background:linear-gradient(90deg,transparent,var(--line) 15%,var(--line) 85%,transparent) top/100% 1px no-repeat}
+
+/* ---------- motion ----------
+   Global, all themes: these are about the change of state, not the look.
+   Transforms and opacity only, so nothing here repaints text. */
+.app{animation:fade .6s ease-out}
+/* A digit that changes rolls in from above; drawClock() adds .tk to it and
+   removes it when the roll ends. Flat themes keep the plain, still clock. */
+html:not(.flat) .clock .cd.tk{animation:roll .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes roll{from{transform:translateY(-.14em);opacity:0}}
+/* Level change: the eyebrow, blinds and next line rise into place. */
+.swap{animation:swap .5s cubic-bezier(.16,1,.3,1)}
+@keyframes swap{from{opacity:0;transform:translateY(.35em)}}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}}
+@keyframes menupop{from{opacity:0;transform:translate(-50%,-6px)}}
+@keyframes rise{from{opacity:0;transform:translate(-50%,14px)}}
+
+/* ---------- modals ---------- */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);display:grid;place-items:center;padding:16px;z-index:60;animation:fade .25s ease-out}
+.modal{background:var(--bg2);border:1px solid var(--line);border-radius:20px;width:min(560px,100%);max-height:100%;overflow:auto;box-shadow:0 30px 90px rgba(0,0,0,.55);animation:pop .4s cubic-bezier(.16,1,.3,1)}
+.modal.wide{width:min(820px,100%)}
+.mhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px 14px;position:sticky;top:0;background:var(--bg2);border-bottom:1px solid var(--line);z-index:2}
+.mtitle{font-size:16px;font-weight:600;letter-spacing:.01em}
+.mbody{padding:4px 20px 20px}
+.mfoot{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px 18px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--bg2);flex-wrap:wrap}
+.mfoot .left{margin-right:auto;display:flex;gap:8px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.row:first-child{border-top:0}
+.rlabel{font-size:14px;color:var(--ink)}
+.rhint{font-size:12px;color:var(--muted);margin-top:3px}
+.sectitle{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-top:18px;padding-bottom:2px}
+
+input[type=text],input[type=number],select,textarea{
+  font:inherit;font-size:14px;background:var(--surface);color:var(--ink);
+  border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0;
+}
+input[type=number]{width:100%}
+textarea{width:100%;min-height:150px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5}
+input[type=range]{accent-color:var(--accent);width:180px;max-width:48vw}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.pair{display:flex;gap:8px;align-items:center}
+.pair select{flex:0 0 auto;max-width:46%}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:1.4fr 1fr .8fr;gap:12px}
+@media (max-width:560px){.grid3{grid-template-columns:1fr 1fr}}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:560px){.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 16px;border-radius:11px;cursor:pointer;font-size:14px;transition:border-color .2s,color .2s,background-color .2s,transform .3s cubic-bezier(.2,.8,.2,1)}
+.btn:hover{border-color:var(--muted)}
+.btn:active{transform:scale(.97);transition-duration:.08s}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.btn.quiet{background:none;color:var(--muted)}
+.btn.quiet:hover{color:var(--ink-dim)}
+.btn.danger{color:var(--crit)}
+.btn.sm{padding:7px 11px;font-size:13px;border-radius:9px}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface)}
+.seg button{background:transparent;border:0;color:var(--muted);padding:9px 16px;font-size:13.5px;cursor:pointer;transition:background-color .2s,color .2s}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+
+.swatches{display:flex;gap:12px;flex-wrap:wrap}
+.swit{display:flex;flex-direction:column;align-items:center;gap:6px}
+.sw{width:62px;height:46px;border-radius:12px;border:1px solid var(--line);cursor:pointer;position:relative;overflow:hidden;padding:0;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.sw:hover{transform:translateY(-2px)}
+.sw[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:2px}
+.sw .bar{position:absolute;left:9px;top:13px;width:26px;height:6px;border-radius:3px;opacity:.55}
+.sw .dot{position:absolute;right:9px;bottom:9px;width:13px;height:13px;border-radius:50%}
+.swname{font-size:11px;color:var(--muted);letter-spacing:.05em}
+
+.switch{position:relative;width:48px;height:28px;flex:0 0 auto}
+.switch input{position:absolute;inset:0;opacity:0;margin:0;width:100%;height:100%;cursor:pointer;z-index:2}
+.switch .track{position:absolute;inset:0;border-radius:99px;background:var(--line);transition:background .25s}
+.switch .thumb{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--muted);transition:transform .3s cubic-bezier(.2,.8,.2,1),background .25s}
+.switch input:checked ~ .track{background:var(--accent)}
+.switch input:checked ~ .thumb{transform:translateX(20px);background:var(--accent-ink)}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:10px}
+table.lv{border-collapse:collapse;width:100%;min-width:520px;font-size:13.5px}
+table.lv th{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:10px 8px;background:var(--surface);position:sticky;top:0}
+table.lv td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:middle}
+table.lv td input{padding:6px 8px;border-radius:8px;width:100%}
+table.lv tr.isbreak td{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.lvno{font-family:Outfit,sans-serif;color:var(--muted);width:44px;font-size:13px}
+.lvact{white-space:nowrap;width:86px;text-align:right}
+.mini{width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;line-height:0}
+.mini:hover{color:var(--ink);background:var(--surface)}
+.mini.x:hover{color:var(--crit)}
+.mini.on{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.chipflag{display:inline-block;vertical-align:-.14em;width:1em;height:1em;color:var(--accent);stroke-width:1.9}
+.resumebar{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:92;
+  display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);
+  background:var(--surface);border:1px solid var(--line);color:var(--ink);
+  padding:10px 12px;border-radius:12px;font-size:13.5px;box-shadow:0 14px 40px rgba(0,0,0,.4);
+  animation:rise .4s cubic-bezier(.16,1,.3,1)}
+.cellw{position:relative;display:flex;align-items:center}
+.cellw input{padding-right:24px}
+.wchev{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:19px;height:19px;padding:0;border:0;background:none;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+.wchev:hover{color:var(--ink)}
+.wchev .svgi{width:13px;height:13px}
+.wheelpop{position:fixed;z-index:95;width:138px;padding:6px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.5);animation:pop .3s cubic-bezier(.16,1,.3,1)}
+.whead{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 4px 6px}
+.wtitle{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.wtype{background:none;border:0;color:var(--accent);font-size:11.5px;cursor:pointer;padding:2px 4px;font-weight:600}
+.wbox{position:relative}
+.wheel{height:200px;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  -webkit-mask-image:linear-gradient(to bottom,transparent,#000 30%,#000 70%,transparent);
+  mask-image:linear-gradient(to bottom,transparent,#000 30%,#000 70%,transparent)}
+.wheel::-webkit-scrollbar{display:none}
+.wheel .wpad{height:80px}
+.wheel .wi{height:40px;scroll-snap-align:center;display:grid;place-items:center;cursor:pointer;
+  font-family:Outfit,sans-serif;font-size:15px;color:var(--muted);opacity:.65;transition:opacity .12s,font-size .12s,color .12s}
+.wheel .wi.sel{color:var(--ink);opacity:1;font-weight:600;font-size:19px}
+.wsel{position:absolute;left:4px;right:4px;top:80px;height:40px;pointer-events:none;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:color-mix(in srgb,var(--accent) 7%,transparent);border-radius:7px}
+.breaktag{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.grip{display:inline-grid;place-items:center;width:34px;height:34px;color:var(--muted);cursor:grab;border-radius:8px;
+  touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.grip:hover{color:var(--ink);background:var(--surface)}
+.grip:active{cursor:grabbing}
+table.lv tr.dragging td{background:color-mix(in srgb,var(--accent) 20%,var(--bg2));opacity:.95}
+table.lv tr.dragging .grip{color:var(--accent)}
+body.dragging-row{-webkit-user-select:none;user-select:none}
+body.dragging-row .modal{overflow:hidden}
+.warnnote{font-size:12px;color:var(--muted);margin-top:8px}
+.disabled{opacity:.45;pointer-events:none}
+.lockrow{opacity:.45}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:90;
+  background:var(--surface);border:1px solid var(--line);color:var(--ink);
+  padding:11px 18px;border-radius:12px;font-size:13.5px;box-shadow:0 14px 40px rgba(0,0,0,.4);
+  animation:rise .4s cubic-bezier(.16,1,.3,1)}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}
+  .clock.crit{animation:none;opacity:1}
+  html:not(.flat) .tbtn:hover,html:not(.flat) .tbtn:active,html:not(.flat) .clock:hover,html:not(.flat) .clock:active{transform:none}
+  html:not(.flat) .tbtn:hover::after,html:not(.flat) .tbtn.shine::after{animation:none}
+  :root[data-app-theme="royal"]:not(.flat) .clock .cd::after,:root[data-app-theme="royal"]:not(.flat) .clock .cs::after{animation:none}
+}
