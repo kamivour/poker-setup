@@ -20,9 +20,12 @@ img{max-width:100%}
    --clock-fx       the digit material: every theme gets its own kind of
                     text-shadow, not the same stack with different numbers
    --num-fx         the same for the blinds and the ante
+   --num-ink        colour of the small blind and the ante (default --ink-dim)
    Royal's digits are gilded (a gradient clipped to the glyphs) — see the
    decorated-look block — so it also carries --gild-* stops: five for the gold
-   and two bronze steps for the side of the bar under it. */
+   and two bronze steps for the side of the bar under it. Midnight's are cut
+   from the moon and carry --moon (the relief), --moon-tint and the two
+   --moon-* shade steps. */
 :root{
   color-scheme:dark;
   --bg:#0B1410; --bg2:#101A15; --surface:#16231C; --line:#26382D;
@@ -45,14 +48,63 @@ img{max-width:100%}
     0 .11em .26em rgba(0,0,0,.42);
   --num-fx:0 .02em .02em rgba(0,0,0,.25),0 .09em .2em rgba(0,0,0,.38);
 }
-/* Midnight is the flat theme: THEMES marks it flat:true, so none of the
-   decorated-look rules apply and it needs none of those tokens. */
+/* Midnight: a night sky with the digits cut from the moon. */
 :root[data-app-theme="midnight"]{
   color-scheme:dark;
-  --bg:#0A0D13; --bg2:#0F141C; --surface:#151B25; --line:#242D3B;
-  --ink:#E9EDF4; --ink-dim:#A7B2C2; --muted:#6E7A8C;
-  --accent:#6AA9E0; --accent-ink:#06131F;
+  --bg:#080C18; --bg2:#0D1324; --surface:#141B2F; --line:#242D47;
+  --ink:#E4E8F2; --ink-dim:#AAB4CA; --muted:#6B7690;
+  --accent:#7FB2E6; --accent-ink:#06131F;
   --warn:#E3B457; --crit:#E2705C;
+  /* Midnight: the sky, near black at the top and a blue haze low down. The
+     canvas adds the stars; this is the flat stand-in. */
+  --decor:
+    linear-gradient(172deg,#04060D 0%,#0B1124 55%,#161E3C 100%),
+    radial-gradient(ellipse 80% 40% at 60% 105%,rgba(60,80,140,.22),transparent 70%);
+  --glass:rgba(190,205,255,.07); --glass-line:rgba(190,205,255,.18); --glass-hi:rgba(220,230,255,.34);
+  --glass-shadow:rgba(0,0,0,.55); --sheen:rgba(220,230,255,.42);
+  /* Moon digits. The glyph is transparent and casts the shadows (the .clock
+     rule below): a hairline of light on the top-left edge, two steps of
+     shade down the right, the contact shadow and a soft moonlit halo.
+     ::after paints the surface (see the decorated-look block): --moon is
+     the relief, an SVG of fractal noise and crater bowls lit from the top
+     left, and --moon-tint multiplies it, white at rest and amber or red on
+     the clock in warn / crit. The blinds and the ante are raised the same
+     way in their own colour. */
+  --clock-ink:#D8DBE4;
+  --moon-tint:#FFFFFF; --moon-x:#6B6F7E; --moon-y:#3E4250;
+  --moon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cdefs%3E%3CradialGradient id='c'%3E%3Cstop offset='.5' stop-color='%233c3c3c'/%3E%3Cstop offset='.72' stop-color='%236c6c6c'/%3E%3Cstop offset='.84' stop-color='%23d4d4d4'/%3E%3Cstop offset='1' stop-color='%23888'/%3E%3C/radialGradient%3E%3Cfilter id='f' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'%3E%3CfeColorMatrix in='SourceGraphic' type='luminanceToAlpha' result='h'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.032' numOctaves='5' seed='5' stitchTiles='stitch' result='t'/%3E%3CfeColorMatrix in='t' type='luminanceToAlpha' result='ta'/%3E%3CfeComposite in='h' in2='ta' operator='arithmetic' k2='.55' k3='.45' result='hm'/%3E%3CfeDiffuseLighting in='hm' surfaceScale='7' diffuseConstant='1.05' lighting-color='%23f4f5fa'%3E%3CfeDistantLight azimuth='225' elevation='55'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23f)'%3E%3Crect width='256' height='256' fill='%23888'/%3E%3Ccircle cx='58' cy='64' r='30' fill='url(%23c)'/%3E%3Ccircle cx='176' cy='48' r='17' fill='url(%23c)'/%3E%3Ccircle cx='208' cy='150' r='34' fill='url(%23c)'/%3E%3Ccircle cx='96' cy='170' r='13' fill='url(%23c)'/%3E%3Ccircle cx='140' cy='118' r='9' fill='url(%23c)'/%3E%3Ccircle cx='42' cy='212' r='19' fill='url(%23c)'/%3E%3Ccircle cx='150' cy='222' r='11' fill='url(%23c)'/%3E%3Ccircle cx='228' cy='228' r='8' fill='url(%23c)'/%3E%3Ccircle cx='118' cy='30' r='7' fill='url(%23c)'/%3E%3C/g%3E%3C/svg%3E");
+  --num-fx:
+    -.008em -.008em 0 rgba(255,255,255,.3),
+    .012em .014em 0 color-mix(in srgb,currentcolor 50%,#000),
+    .03em .05em .05em rgba(0,0,0,.5),
+    0 .12em .28em rgba(0,0,0,.55);
+}
+:root[data-app-theme="midnight"] .clock{
+  --clock-fx:
+    -.012em -.012em 0 rgba(255,255,255,.5),
+    .012em .012em 0 var(--moon-x),
+    .024em .026em 0 var(--moon-y),
+    .04em .07em .05em rgba(0,0,0,.55),
+    0 .16em .34em rgba(0,0,0,.6),
+    0 0 .7em rgba(150,180,240,.16)}
+:root[data-app-theme="midnight"] .clock.warn{--moon-tint:#F0C26A; --moon-x:#7A5A22; --moon-y:#4A3410}
+:root[data-app-theme="midnight"] .clock.crit{--moon-tint:#F08A72; --moon-x:#7E3A2C; --moon-y:#4E2016}
+/* Minimal is the flat theme: THEMES marks it flat:true, so none of the
+   decorated-look rules apply and it needs none of those tokens. Off-black
+   and off-white rather than black and white, easy on the eyes over a long
+   night; the small blind and the ante take a muted sand and the big blind a
+   muted blue, so the numbers still read apart. */
+:root[data-app-theme="minimal"]{
+  color-scheme:dark;
+  --bg:#171717; --bg2:#1D1D1D; --surface:#232323; --line:#323232;
+  --ink:#C6C6C6; --ink-dim:#9E9E9E; --muted:#6C6C6C;
+  --accent:#8EB3C7; --accent-ink:#0E1A20;
+  --num-ink:#C4B08E;
+  --warn:#C9A66A; --crit:#C97B6C;
+  --gold:#B5A57C; --silver:#9A9A9A;
+  /* Set here because the Felt value on :root would leak through otherwise;
+     a shade above --ink so the clock still leads, but far from pure white. */
+  --clock-ink:#D2D2D2;
 }
 :root[data-app-theme="bone"]{
   color-scheme:light;
@@ -75,23 +127,23 @@ img{max-width:100%}
 }
 :root[data-app-theme="cafe"]{
   color-scheme:light;
-  --bg:#E9DECA; --bg2:#F1E8D8; --surface:#F8F1E5; --line:#D3C2A8;
-  --ink:#3A2316; --ink-dim:#5A3A27; --muted:#8E7460;
-  --accent:#7A4520; --accent-ink:#FBF1E4;
-  --warn:#A9611C; --crit:#A5382A;
-  --gold:#A57A2A; --silver:#8A8580;
-  /* Cafe: a latte wall, rough as plaster, with coffee-brown numbers. The
-     canvas paints the texture; this is the flat stand-in. */
+  --bg:#D2AF85; --bg2:#DDBE97; --surface:#EBD5B4; --line:#B8905F;
+  --ink:#2E190C; --ink-dim:#4B2D18; --muted:#7A5535;
+  --accent:#7A2E12; --accent-ink:#FBEBD8;
+  --warn:#8A4A0E; --crit:#8E2C1E;
+  --gold:#8E5E14; --silver:#7B6F63;
+  /* Cafe: a latte wall under a warm lamp, the corners falling into brown.
+     The canvas paints the plaster; this is the flat stand-in. */
   --decor:
-    radial-gradient(ellipse 70% 60% at 30% 15%,rgba(255,250,240,.5),transparent 70%),
-    radial-gradient(ellipse 90% 85% at 50% 50%,transparent 45%,rgba(90,55,25,.22) 100%);
-  --glass:rgba(255,248,236,.6); --glass-line:rgba(80,50,25,.2); --glass-hi:rgba(255,255,255,.95);
-  --glass-shadow:rgba(70,40,15,.28); --sheen:rgba(255,255,255,.9);
+    radial-gradient(ellipse 75% 55% at 50% 0%,rgba(255,228,180,.45),transparent 70%),
+    radial-gradient(ellipse 90% 90% at 50% 50%,transparent 40%,rgba(80,45,15,.4) 100%);
+  --glass:rgba(255,240,215,.5); --glass-line:rgba(80,45,15,.25); --glass-hi:rgba(255,250,240,.9);
+  --glass-shadow:rgba(60,30,5,.35); --sheen:rgba(255,250,240,.85);
   /* Espresso on the wall: the numbers sit a little proud of the plaster
      with a warm shadow under them. */
-  --clock-ink:#452718;
-  --clock-fx:0 .03em .04em rgba(60,35,15,.3),0 .14em .28em rgba(60,35,15,.22);
-  --num-fx:0 .03em .04em rgba(60,35,15,.28),0 .12em .24em rgba(60,35,15,.2);
+  --clock-ink:#301A0C;
+  --clock-fx:0 .03em .04em rgba(50,25,5,.32),0 .14em .28em rgba(50,25,5,.26);
+  --num-fx:0 .03em .04em rgba(50,25,5,.3),0 .12em .24em rgba(50,25,5,.22);
 }
 :root[data-app-theme="royal"]{
   color-scheme:dark;
@@ -189,7 +241,7 @@ button{font:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transp
 .blinds{display:flex;align-items:flex-end;justify-content:center;gap:clamp(22px,6vw,86px);flex-wrap:wrap}
 .bcell{display:flex;flex-direction:column;gap:3px;align-items:center}
 .blabel{font-size:clamp(11px,1.8vh,16px);letter-spacing:.26em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.bval{font-family:Outfit,system-ui,sans-serif;font-weight:500;line-height:1;font-size:clamp(1.9rem,min(11vw,12.5vh),8.5rem);color:var(--ink-dim);transition:color .4s}
+.bval{font-family:Outfit,system-ui,sans-serif;font-weight:500;line-height:1;font-size:clamp(1.9rem,min(11vw,12.5vh),8.5rem);color:var(--num-ink,var(--ink-dim));transition:color .4s}
 .bval .bb{color:var(--accent);font-weight:600;transition:color .4s}
 .bval .sl{color:var(--muted);padding:0 .12em;font-weight:300}
 .nextline{font-size:clamp(12px,2vh,19px);color:var(--muted);letter-spacing:.07em}
@@ -291,6 +343,29 @@ html:not(.flat) .bval .sl{text-shadow:none}
   color:transparent;-webkit-text-fill-color:transparent;
   animation:gleam 9s cubic-bezier(.4,0,.2,1) infinite}
 @keyframes gleam{0%,76%{background-position:0 100%,0 0}100%{background-position:0 0%,0 0}}
+/* Midnight: the digits are cut from the moon. As on Royal, the glyph is
+   transparent and casts the shadows, and ::after paints a copy from data-d
+   with --moon clipped to it. The tile is two em square and every glyph looks
+   at a different part of it, so no two digits share a crater and no tile
+   edge falls inside a glyph. --moon-tint multiplies the relief: white at
+   rest, amber and red on warn / crit. */
+:root[data-app-theme="midnight"]:not(.flat) .clock .cd,
+:root[data-app-theme="midnight"]:not(.flat) .clock .cs{position:relative;color:transparent}
+:root[data-app-theme="midnight"]:not(.flat) .clock .cd::after,
+:root[data-app-theme="midnight"]:not(.flat) .clock .cs::after{
+  content:attr(data-d);position:absolute;inset:0;text-shadow:none;
+  background-image:linear-gradient(var(--moon-tint),var(--moon-tint)),var(--moon);
+  background-blend-mode:multiply,normal;
+  background-size:2em 2em;
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent}
+:root[data-app-theme="midnight"]:not(.flat) .clock :nth-child(2)::after{background-position:-.7em -.4em}
+:root[data-app-theme="midnight"]:not(.flat) .clock :nth-child(3)::after{background-position:-1.3em -.1em}
+:root[data-app-theme="midnight"]:not(.flat) .clock :nth-child(4)::after{background-position:-.35em -.85em}
+:root[data-app-theme="midnight"]:not(.flat) .clock :nth-child(5)::after{background-position:-1em -.6em}
+:root[data-app-theme="midnight"]:not(.flat) .clock :nth-child(6)::after{background-position:-.15em -1em}
+:root[data-app-theme="midnight"]:not(.flat) .clock :nth-child(7)::after{background-position:-.9em -.2em}
+:root[data-app-theme="midnight"]:not(.flat) .clock :nth-child(8)::after{background-position:-.5em -.75em}
 
 /* Glass. The pill and the counters share the surface so the screen reads as
    one material; only the transport lifts and shines. */

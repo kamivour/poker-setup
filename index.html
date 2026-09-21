@@ -10,7 +10,12 @@
 <meta name="description" content="A blind timer for home-game poker tournaments.">
 <title>Homegame Blind Clock</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap">
-<link rel="stylesheet" href="style.css?v=20260921b">
+<script>
+/* Theme before the first paint, so a slow app.js download never shows Felt
+   first. Mirrors applyTheme() in app.js: the settings key and the flat theme. */
+try{var s=JSON.parse(localStorage.getItem("pkclock2.settings"));if(s&&s.theme){document.documentElement.setAttribute("data-app-theme",s.theme);if(s.theme==="minimal")document.documentElement.classList.add("flat");}}catch(e){}
+</script>
+<link rel="stylesheet" href="style.css?v=20260922">
 </head>
 <body>
 <canvas id="fx" aria-hidden="true"></canvas>
@@ -240,8 +245,8 @@
   </div>
 </div>
 
-<script src="fx.js?v=20260921b"></script>
-<script src="app.js?v=20260921b"></script>
+<script src="fx.js?v=20260922"></script>
+<script src="app.js?v=20260922"></script>
 
 </body>
 </html>

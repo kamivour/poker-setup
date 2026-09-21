@@ -68,10 +68,11 @@ var I18N = {
 
 var THEMES = [
   {id:"felt",    name:"Felt",     bg:"#0B1410", ink:"#F3EFE3", accent:"#D4A73C"},
-  {id:"midnight",name:"Midnight", bg:"#0A0D13", ink:"#E9EDF4", accent:"#6AA9E0", flat:true},
+  {id:"midnight",name:"Midnight", bg:"#080C18", ink:"#E4E8F2", accent:"#7FB2E6"},
   {id:"bone",    name:"Bone",     bg:"#F1EFE8", ink:"#201E1A", accent:"#BE2F33"},
-  {id:"cafe",    name:"Cafe",     bg:"#E9DECA", ink:"#3A2316", accent:"#7A4520"},
-  {id:"royal",   name:"Royal",    bg:"#170609", ink:"#F8EFE6", accent:"#E0C158"}
+  {id:"cafe",    name:"Cafe",     bg:"#D2AF85", ink:"#2E190C", accent:"#7A2E12"},
+  {id:"royal",   name:"Royal",    bg:"#170609", ink:"#F8EFE6", accent:"#E0C158"},
+  {id:"minimal", name:"Minimal",  bg:"#171717", ink:"#C6C6C6", accent:"#8EB3C7", flat:true}
 ];
 
 /* ============ defaults ============ */
