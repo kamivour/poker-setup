@@ -571,8 +571,11 @@ function lsGet(k,fb){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v)
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 
 var settings = Object.assign({
-  theme:"felt", lang:"en", volume:70, muteAlarm:false, keepAwake:true
+  theme:"felt", lang:"en", volume:100, muteAlarm:false, keepAwake:true
 }, lsGet(K.settings,{}));
+/* Settings saved before the alarm was made louder pinned the volume at 70.
+   Lift those to full once, then leave the slider to the user. */
+if(settings.sv!==2){ settings.sv=2; settings.volume=100; lsSet(K.settings,settings); }
 
 var profiles = lsGet(K.profiles,null);
 if(!profiles || !profiles.length) profiles=[defaultProfile()];
@@ -1032,7 +1035,6 @@ for(var li=0;li<langBtns.length;li++){
 }
 $("volume").value=settings.volume;
 $("volume").oninput=function(){ settings.volume=+this.value; lsSet(K.settings,settings); };
-$("volume").onchange=function(){ audioOn(); chimeWarn(); };
 $("volume").onchange=function(){ audioOn(); chimeWarn(); };
 $("muteAlarm").checked=!!settings.muteAlarm;
 $("muteAlarm").onchange=function(){
