@@ -28,7 +28,7 @@ Tôi tổ chức MTT ở homegame và cần một cái clock chiếu lên iPad h
 - Hiển thị blind hiện tại (SB/BB/ante) và preview level kế tiếp
 - Break là một dòng trong bảng level; khi đang break màn hình đổi sang hiện blind sẽ vào sau khi nghỉ
 - Đếm entries (+/−), tính prize pool đã trừ rake, chia Nhất 70% / Nhì 30%
-- Profile: tạo mới, nhân bản, sửa, xoá; sinh cấu trúc blind tự động từ 4 tham số
+- Profile: tạo mới, nhân bản, sửa, xoá; sinh cấu trúc blind tự động từ 4 tham số. Hồ sơ `default` chỉ đọc — muốn khác thì nhân bản ra rồi sửa bản sao
 - 5 theme màu, 2 ngôn ngữ (EN / Tiếng Việt)
 - Wake Lock giữ màn hình sáng khi đồng hồ chạy
 - Đánh dấu level cần đổi chip (chip-up); icon chip hiện cạnh số level và ở dòng preview level kế tiếp
@@ -98,6 +98,8 @@ Giải đang chạy lưu ở `localStorage["pkclock2.run"]` dạng `{v:1, at, pi
 **Mỗi chữ số của đồng hồ nằm trong một `<span>` rộng cố định** (`.cd { width: .62em }`). Không tin vào `tabular-nums` của font — nếu font chưa load xong hoặc fallback sang font hệ thống, số 1 hẹp hơn số 0 và đồng hồ sẽ giật mỗi giây.
 
 **Prize làm tròn có bù.** Bước làm tròn tuỳ theo pool: `step = pool >= 50000 ? 1000 : 1`. Nhất = `round(pool × 0.7 / step) × step`, Nhì = `pool − Nhất`. Pool nhỏ thì làm tròn 1000 sẽ nuốt mất phần lớn tiền giải nhì, nên chỉ làm tròn khi pool đủ lớn. Nhì luôn tính bằng phần còn lại: tính riêng từng giải rồi làm tròn cả hai sẽ có lúc tổng không khớp pool.
+
+**Hồ sơ `default` khoá cứng, không sửa được từ giao diện.** Đó là thứ duy nhất chắc chắn còn đúng khi mở clock lên lạnh, nên không để ai chỉnh nhầm giữa buổi chơi. Nút Sửa hồ sơ bị mờ đi khi đang ở hồ sơ mặc định, `openEditor()` từ chối mở nó, và `btnEdSave` chặn thêm một lớp nữa. Muốn đổi mặc định thì sửa `defaultProfile()` và `defaultLevels()` trong code rồi push — việc của người viết code, không phải việc làm ở bàn.
 
 **Namespace `pkclock2`.** Đổi từ `pkclock` khi thay cấu trúc default, để profile cũ đã lưu không đè lên cái mới. Nếu sau này lại đổi default profile theo kiểu không tương thích thì bump lên `pkclock3`.
 

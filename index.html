@@ -251,6 +251,7 @@ body.dragging-row{-webkit-user-select:none;user-select:none}
 body.dragging-row .modal{overflow:hidden}
 .warnnote{font-size:12px;color:var(--muted);margin-top:8px}
 .disabled{opacity:.45;pointer-events:none}
+.lockrow{opacity:.45}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:90;
   background:var(--surface);border:1px solid var(--line);color:var(--ink);
   padding:11px 18px;border-radius:12px;font-size:13.5px;box-shadow:0 14px 40px rgba(0,0,0,.4)}
@@ -514,7 +515,8 @@ var I18N = {
     typeNum:"Type", dragBreak:"Drag to move this break",
     chipup:"Colour up", resumeAsk:"Resume the tournament in progress?",
     resumeYes:"Resume", resumeNo:"Dismiss",
-    volHint:"Release the slider to hear a test chime. On iPad, Silent Mode mutes the chime as well."
+    volHint:"Release the slider to hear a test chime. On iPad, Silent Mode mutes the chime as well.",
+    defaultLocked:"The default profile is read-only. Duplicate it, then edit the copy."
   },
   vi:{
     level:"Level", brk:"Nghỉ", blinds:"Blind", ante:"Ante", afterBreak:"Sau giờ nghỉ",
@@ -541,7 +543,8 @@ var I18N = {
     typeNum:"Gõ số", dragBreak:"Kéo để đổi vị trí giờ nghỉ",
     chipup:"Đổi chip", resumeAsk:"Khôi phục giải đang dở?",
     resumeYes:"Khôi phục", resumeNo:"Bỏ qua",
-    volHint:"Thả thanh trượt ra để nghe thử chuông. Trên iPad, chế độ im lặng tắt luôn tiếng chuông này."
+    volHint:"Thả thanh trượt ra để nghe thử chuông. Trên iPad, chế độ im lặng tắt luôn tiếng chuông này.",
+    defaultLocked:"Hồ sơ mặc định chỉ đọc. Nhân bản ra rồi sửa bản sao."
   }
 };
 
@@ -995,11 +998,13 @@ function buildMenu(){
     menu.appendChild(b);
   });
   var sep=document.createElement("div"); sep.className="sep"; menu.appendChild(sep);
-  [[t("editProfile"),function(){ openEditor(profile()); }],
+  var locked = activeId==="default";
+  [[t("editProfile"),function(){ openEditor(profile()); }, locked],
    [t("duplicate"),function(){ var c=JSON.parse(JSON.stringify(profile())); c.id="p"+Date.now(); c.name=c.name+" ✱"; openEditor(c,true); }],
    [t("newProfile"),function(){ var n=defaultProfile(); n.id="p"+Date.now(); n.name=""; openEditor(n,true); }]
   ].forEach(function(pair){
     var b=document.createElement("button"); b.textContent=pair[0];
+    if(pair[2]){ b.classList.add("lockrow"); b.setAttribute("aria-disabled","true"); }
     b.onclick=function(){ menu.hidden=true; $("profilePill").setAttribute("aria-expanded","false"); pair[1](); };
     menu.appendChild(b);
   });
@@ -1077,7 +1082,12 @@ linkPair($("genGrowSel"),$("genGrow"));
 
 /* ============ profile editor ============ */
 var edit=null, editIsNew=false;
+/* The default profile is the shipped structure and stays read-only: it is the
+   one thing guaranteed to be sane when the clock is opened cold. Changing it
+   is a code change to defaultProfile(), not a change anyone makes at the
+   table. Everyone else duplicates it and edits the copy. */
 function openEditor(p, isNew){
+  if(!isNew && p.id==="default"){ toast(t("defaultLocked")); return; }
   edit=JSON.parse(JSON.stringify(p));
   editIsNew=!!isNew;
   $("edName").value=edit.name;
@@ -1322,6 +1332,7 @@ $("btnGenerate").onclick=function(){
   edit.levels=out; drawRows();
 };
 $("btnEdSave").onclick=function(){
+  if(edit.id==="default"){ toast(t("defaultLocked")); return; }
   edit.name=($("edName").value||"").trim()||"Untitled";
   edit.stack=Math.max(0,+$("edStack").value||0);
   edit.buyin=Math.max(0,+$("edBuyin").value||0);
