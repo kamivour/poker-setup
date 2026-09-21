@@ -1,10 +1,11 @@
 /* fx.js — the animated backdrop behind the decorated themes.
 
    One WebGL fragment shader paints the whole viewport: a lamp over baize for
-   Felt, drifting bokeh and steam for Cafe, gold dust and a rim of light for
-   Royal, paper under window light for Bone. app.js calls PKFX.setTheme(id,
-   flat) whenever the theme changes, and two themes cross-fade inside the
-   shader. Flat themes (Midnight) switch the canvas off altogether.
+   Felt, a rough latte wall with coffee rings for Cafe, gold dust and a rim of
+   light for Royal, paper under window light for Bone. app.js calls
+   PKFX.setTheme(id, flat) whenever the theme changes, and two themes
+   cross-fade inside the shader. Flat themes (Midnight) switch the canvas off
+   altogether.
 
    Budget: the canvas renders at 0.6x CSS pixels (capped at 1.3 Mpx) and at
    most 30 frames a second, pauses while the tab is hidden, and draws a single
@@ -97,36 +98,38 @@ var FRAG=[
 "  return col;",
 "}",
 "",
-"/* Cafe: an amber lamp top left, embers bottom right, out-of-focus lights",
-"   drifting behind the table and steam rising from a cup at the bottom",
-"   left. The lights stay out of the middle so the clock sits on plain dark. */",
+"/* Cafe: a milky latte wall, rough as plaster, lit from the top left so the",
+"   bumps catch the light. The mottling drifts as slowly as the window light,",
+"   and two old coffee rings sit in the corners, clear of the numbers. */",
+"float bump(vec2 g){ return noise(g)*0.72+noise(g*2.9+vec2(5.0,3.0))*0.28; }",
+"float ring(vec2 p, vec2 c, float r, float seed){",
+"  float d=length(p-c);",
+"  float rr=r*(1.0+0.09*(noise(p*11.0+seed)-0.5));",
+"  float e=(d-rr)/(r*0.06);",
+"  float edge=exp(-e*e);",
+"  float fill=(1.0-smoothstep(rr*0.8,rr,d))*0.22;",
+"  float wear=0.4+0.6*noise(p*26.0+seed*1.7);",
+"  return (edge+fill)*wear;",
+"}",
 "vec3 cafe(vec2 p, vec2 q, float t, float asp){",
-"  vec3 base=vec3(0.098,0.071,0.063);",
-"  vec3 amber=vec3(0.816,0.541,0.29);",
-"  vec3 cream=vec3(0.95,0.78,0.55);",
-"  vec3 ember=vec3(0.55,0.22,0.09);",
-"  vec3 col=base;",
-"  col+=amber*0.15*soft(q,vec2(-1.1,1.0),vec2(1.3,1.0),1.4);",
-"  col+=ember*0.32*soft(q,vec2(1.05,-1.05),vec2(1.25,1.0),1.2);",
-"  float keep=smoothstep(0.3,0.85,length(q/vec2(1.0,0.8)));",
-"  for(int i=0;i<12;i++){",
-"    float fi=float(i);",
-"    vec2 s=vec2(fi*0.37+0.11,fi*0.71+0.29);",
-"    vec2 c=(vec2(hash(s),hash(s+3.1))*2.0-1.0)*vec2(1.05,0.95);",
-"    float k=1.0+mod(fi,3.0);",
-"    c+=0.14*vec2(sin(t*TAU*k/600.0+fi),cos(t*TAU*(k+1.0)/600.0+fi*1.7));",
-"    vec2 cp=c*0.5*vec2(asp,1.0);",
-"    float r=0.09+0.15*hash(s+7.7);",
-"    float d=length(p-cp)/r;",
-"    float disc=(1.0-smoothstep(0.8,1.0,d))*(0.6+0.4*smoothstep(0.55,1.0,d));",
-"    float tw=0.7+0.3*sin(t*TAU*(2.0+mod(fi,4.0))/600.0+fi*2.3);",
-"    col+=mix(amber,cream,hash(s+9.3))*disc*0.075*tw*keep;",
-"  }",
-"  vec2 sp=vec2(p.x*3.0+0.3*sin(t*TAU/200.0),p.y*3.5-t*(40.0/600.0));",
-"  float st=smoothstep(0.5,0.85,fbmT(sp,8.0));",
-"  float sm=exp(-pow((q.x+0.7)/0.32,2.0))*(1.0-smoothstep(-0.9,0.75,q.y))*smoothstep(-1.05,-0.8,q.y);",
-"  col+=vec3(0.95,0.85,0.72)*st*sm*0.11;",
-"  col*=1.0-0.35*smoothstep(0.7,1.45,length(q));",
+"  vec3 milk=vec3(0.955,0.915,0.845);",
+"  vec3 latte=vec3(0.87,0.80,0.69);",
+"  vec3 coffee=vec3(0.40,0.24,0.12);",
+"  vec2 dr=vec2(sin(t*TAU/600.0),cos(t*TAU/600.0))*0.18;",
+"  float m=fbm(p*2.4+dr);",
+"  vec3 col=mix(milk,latte,0.55*smoothstep(0.32,0.72,m));",
+"  vec2 g=p*80.0;",
+"  float h0=bump(g);",
+"  float gx=bump(g+vec2(0.45,0.0))-h0;",
+"  float gy=bump(g+vec2(0.0,0.45))-h0;",
+"  float lit=dot(vec2(gx,gy),vec2(-0.62,0.78));",
+"  col*=1.0+lit*0.42;",
+"  col*=1.0+(noise(p*300.0)-0.5)*0.05;",
+"  vec2 lc=vec2(-0.5+0.25*sin(t*TAU/600.0),0.9);",
+"  col+=0.05*soft(q,lc,vec2(1.4,1.0),1.5);",
+"  float s=ring(p,vec2(-asp*0.5+0.16,-0.29),0.105,1.3)+ring(p,vec2(asp*0.5-0.15,0.32),0.09,4.1);",
+"  col=mix(col,coffee,clamp(s,0.0,1.0)*0.3);",
+"  col*=mix(vec3(1.0),vec3(0.88,0.80,0.68),smoothstep(0.55,1.45,length(q)));",
 "  return col;",
 "}",
 "",

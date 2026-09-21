@@ -19,8 +19,10 @@ img{max-width:100%}
    --clock-ink      digit colour at rest (warn/crit still use --warn/--crit)
    --clock-fx       the digit material: every theme gets its own kind of
                     text-shadow, not the same stack with different numbers
+   --num-fx         the same for the blinds and the ante
    Royal's digits are gilded (a gradient clipped to the glyphs) — see the
-   decorated-look block — so it carries --gild-* stops instead of a shadow. */
+   decorated-look block — so it also carries --gild-* stops: five for the gold
+   and two bronze steps for the side of the bar under it. */
 :root{
   color-scheme:dark;
   --bg:#0B1410; --bg2:#101A15; --surface:#16231C; --line:#26382D;
@@ -41,6 +43,7 @@ img{max-width:100%}
     0 0 .035em color-mix(in srgb,currentcolor 28%,transparent),
     0 .025em .025em rgba(0,0,0,.28),
     0 .11em .26em rgba(0,0,0,.42);
+  --num-fx:0 .02em .02em rgba(0,0,0,.25),0 .09em .2em rgba(0,0,0,.38);
 }
 /* Midnight is the flat theme: THEMES marks it flat:true, so none of the
    decorated-look rules apply and it needs none of those tokens. */
@@ -64,33 +67,31 @@ img{max-width:100%}
     radial-gradient(ellipse 90% 85% at 50% 50%,transparent 46%,rgba(120,95,55,.16) 100%);
   --glass:rgba(255,255,255,.66); --glass-line:rgba(60,50,30,.16); --glass-hi:rgba(255,255,255,.95);
   --glass-shadow:rgba(60,45,20,.22); --sheen:rgba(255,255,255,.9);
-  /* Letterpress: ink pressed into paper, lit from above. */
+  /* Ink lifted off the page: one close shadow and one wide soft one under
+     the digits, the blinds and the ante. The rest stays flat print. */
   --clock-ink:#221F1A;
-  --clock-fx:
-    0 1px 0 rgba(255,255,255,.8),
-    0 .04em .1em rgba(60,45,20,.14);
+  --clock-fx:0 .03em .04em rgba(50,40,20,.28),0 .14em .28em rgba(50,40,20,.2);
+  --num-fx:0 .03em .04em rgba(50,40,20,.26),0 .12em .24em rgba(50,40,20,.18);
 }
 :root[data-app-theme="cafe"]{
-  color-scheme:dark;
-  --bg:#191210; --bg2:#201815; --surface:#291F1A; --line:#3D2E25;
-  --ink:#F2E5D5; --ink-dim:#C6B09A; --muted:#937A62;
-  --accent:#D08A4A; --accent-ink:#1C1109;
-  --warn:#DCA55E; --crit:#D4644C;
-  /* Cafe: one amber lamp top-left, embers bottom-right. */
+  color-scheme:light;
+  --bg:#E9DECA; --bg2:#F1E8D8; --surface:#F8F1E5; --line:#D3C2A8;
+  --ink:#3A2316; --ink-dim:#5A3A27; --muted:#8E7460;
+  --accent:#7A4520; --accent-ink:#FBF1E4;
+  --warn:#A9611C; --crit:#A5382A;
+  --gold:#A57A2A; --silver:#8A8580;
+  /* Cafe: a latte wall, rough as plaster, with coffee-brown numbers. The
+     canvas paints the texture; this is the flat stand-in. */
   --decor:
-    radial-gradient(ellipse 60% 55% at 12% 0%,rgba(208,138,74,.26),transparent 70%),
-    radial-gradient(ellipse 55% 45% at 102% 104%,rgba(140,58,24,.36),transparent 70%),
-    radial-gradient(ellipse 90% 85% at 50% 50%,transparent 42%,rgba(0,0,0,.5) 100%);
-  --glass:rgba(255,225,190,.07); --glass-line:rgba(255,220,180,.18); --glass-hi:rgba(255,232,205,.28);
-  --glass-shadow:rgba(0,0,0,.5); --sheen:rgba(255,236,210,.42);
-  /* A lit sign: the glyphs glow in their own colour, so the warning and
-     critical colours glow too. */
-  --clock-ink:#FBEEDC;
-  --clock-fx:
-    0 0 .05em color-mix(in srgb,currentcolor 55%,transparent),
-    0 0 .18em color-mix(in srgb,currentcolor 30%,transparent),
-    0 0 .45em color-mix(in srgb,currentcolor 16%,transparent),
-    0 .04em .1em rgba(0,0,0,.35);
+    radial-gradient(ellipse 70% 60% at 30% 15%,rgba(255,250,240,.5),transparent 70%),
+    radial-gradient(ellipse 90% 85% at 50% 50%,transparent 45%,rgba(90,55,25,.22) 100%);
+  --glass:rgba(255,248,236,.6); --glass-line:rgba(80,50,25,.2); --glass-hi:rgba(255,255,255,.95);
+  --glass-shadow:rgba(70,40,15,.28); --sheen:rgba(255,255,255,.9);
+  /* Espresso on the wall: the numbers sit a little proud of the plaster
+     with a warm shadow under them. */
+  --clock-ink:#452718;
+  --clock-fx:0 .03em .04em rgba(60,35,15,.3),0 .14em .28em rgba(60,35,15,.22);
+  --num-fx:0 .03em .04em rgba(60,35,15,.28),0 .12em .24em rgba(60,35,15,.2);
 }
 :root[data-app-theme="royal"]{
   color-scheme:dark;
@@ -108,17 +109,37 @@ img{max-width:100%}
   --glass:rgba(255,235,200,.06); --glass-line:rgba(224,193,88,.34); --glass-hi:rgba(255,240,200,.32);
   --glass-shadow:rgba(0,0,0,.55); --sheen:rgba(255,240,200,.5);
   /* Gilded digits: five stops of polished gold, painted by .cd::after. The
-     glyph itself is transparent and only casts the shadow, with a faint
-     gold halo. warn/crit swap the stops. */
+     glyph itself is transparent and casts the body of the bar (see the
+     .clock rule below). warn/crit swap all the stops. */
   --clock-ink:#F1D06A;
-  --clock-fx:
-    0 .03em .03em rgba(0,0,0,.4),
-    0 .12em .3em rgba(0,0,0,.55),
-    0 0 .5em rgba(243,212,112,.2);
   --gild-a:#FFF7D6; --gild-b:#F3D470; --gild-c:#B98A2A; --gild-d:#F8E3A3; --gild-e:#A5761A;
+  --gild-x:#8A5E14; --gild-y:#5A3A0A;
+  /* The blinds and the ante are solid bars extruded in their own colour. */
+  --num-fx:
+    0 .012em 0 color-mix(in srgb,currentcolor 62%,#000),
+    0 .024em 0 color-mix(in srgb,currentcolor 50%,#000),
+    0 .036em 0 color-mix(in srgb,currentcolor 40%,#000),
+    0 .048em 0 color-mix(in srgb,currentcolor 32%,#000),
+    0 .065em .02em rgba(0,0,0,.45),
+    0 .14em .28em rgba(0,0,0,.5);
 }
-:root[data-app-theme="royal"] .clock.warn{--gild-a:#FFE9B5; --gild-b:#F2B33B; --gild-c:#B0680C; --gild-d:#F7C862; --gild-e:#95560A}
-:root[data-app-theme="royal"] .clock.crit{--gild-a:#FFE0D6; --gild-b:#F49A82; --gild-c:#B7412D; --gild-d:#F8B49F; --gild-e:#9A2F1E}
+/* Royal's clock material: five copies of the glyph stepping down in bronze
+   make the side of a gold bar, then a drop shadow and a faint halo. It is
+   declared on the clock itself, not on :root, because a var() inside a
+   custom property is resolved where that property is declared, and
+   .clock.warn / .clock.crit swap --gild-x / --gild-y on the clock. */
+:root[data-app-theme="royal"] .clock{
+  --clock-fx:
+    0 .012em 0 var(--gild-x),
+    0 .024em 0 var(--gild-x),
+    0 .036em 0 color-mix(in srgb,var(--gild-x) 55%,var(--gild-y)),
+    0 .048em 0 var(--gild-y),
+    0 .06em 0 var(--gild-y),
+    0 .075em .02em rgba(0,0,0,.45),
+    0 .17em .32em rgba(0,0,0,.55),
+    0 0 .5em rgba(243,212,112,.18)}
+:root[data-app-theme="royal"] .clock.warn{--gild-a:#FFE9B5; --gild-b:#F2B33B; --gild-c:#B0680C; --gild-d:#F7C862; --gild-e:#95560A; --gild-x:#8A4A0A; --gild-y:#553006}
+:root[data-app-theme="royal"] .clock.crit{--gild-a:#FFE0D6; --gild-b:#F49A82; --gild-c:#B7412D; --gild-d:#F8B49F; --gild-e:#9A2F1E; --gild-x:#7E2A1B; --gild-y:#4A170D}
 
 *,*::before,*::after{box-sizing:border-box}
 html,body{height:100%}
@@ -242,8 +263,12 @@ html.nofx:not(.flat) body::before{content:"";position:fixed;inset:0;z-index:-1;p
   background:var(--chips) left bottom/calc(var(--chip) + var(--crop)) no-repeat}
 @media (orientation:portrait){ :root[data-app-theme="royal"]:not(.flat) .stage::after{--chip:min(24vw,22vh)} }
 
-/* Clock material. Each theme sets its own --clock-fx (see the tokens). */
+/* Clock material. Each theme sets its own --clock-fx (see the tokens), and
+   the blinds and the ante take --num-fx so they are raised the same way.
+   .bb sets it again so that currentcolor in the token is its own colour. */
 html:not(.flat) .clock{text-shadow:var(--clock-fx)}
+html:not(.flat) .bval,html:not(.flat) .bval .bb{text-shadow:var(--num-fx,none)}
+html:not(.flat) .bval .sl{text-shadow:none}
 /* Royal: polished gold clipped to the glyphs. The glyph itself is transparent
    and only casts the shadow (--clock-fx); the gold is a copy of the glyph
    that ::after paints from data-d, because a text-shadow paints over a

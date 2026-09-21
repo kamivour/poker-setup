@@ -70,7 +70,7 @@ var THEMES = [
   {id:"felt",    name:"Felt",     bg:"#0B1410", ink:"#F3EFE3", accent:"#D4A73C"},
   {id:"midnight",name:"Midnight", bg:"#0A0D13", ink:"#E9EDF4", accent:"#6AA9E0", flat:true},
   {id:"bone",    name:"Bone",     bg:"#F1EFE8", ink:"#201E1A", accent:"#BE2F33"},
-  {id:"cafe",    name:"Cafe",     bg:"#191210", ink:"#F2E5D5", accent:"#D08A4A"},
+  {id:"cafe",    name:"Cafe",     bg:"#E9DECA", ink:"#3A2316", accent:"#7A4520"},
   {id:"royal",   name:"Royal",    bg:"#170609", ink:"#F8EFE6", accent:"#E0C158"}
 ];
 
