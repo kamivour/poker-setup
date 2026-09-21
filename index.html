@@ -649,7 +649,7 @@ function maybeResume(){
 document.addEventListener("visibilitychange", function(){ if(document.hidden) saveRun(); });
 
 /* ============ audio ============ */
-var actx=null, audioUnlocked=false;
+var actx=null, audioUnlocked=false, master=null;
 function audioOn(){
   try{
     if(!actx){ var C=window.AudioContext||window.webkitAudioContext; if(!C) return; actx=new C(); }
@@ -668,6 +668,17 @@ function audioOn(){
        state "interrupted" after Siri, a call, or the screen going off, and it
        never leaves that state on its own. */
     if(actx.state!=="running" && actx.resume) actx.resume();
+    /* Everything goes through a limiter so the chime can sit near full scale
+       without the two overlapping notes clipping into a rasp. */
+    if(!master){
+      master=actx.createDynamicsCompressor();
+      master.threshold.value=-6;
+      master.knee.value=6;
+      master.ratio.value=12;
+      master.attack.value=0.003;
+      master.release.value=0.12;
+      master.connect(actx.destination);
+    }
   }catch(e){}
 }
 /* Any tap is a chance to create or revive the context, not only the transport
@@ -680,17 +691,20 @@ function tone(freq, start, dur, vol){
   if(!actx) return;
   try{
     var o=actx.createOscillator(), g=actx.createGain();
-    o.type="sine"; o.frequency.value=freq;
+    /* Triangle, not sine: the extra harmonics carry across a noisy room at the
+       same peak level, which is what makes the alarm audible from the far end
+       of the table. */
+    o.type="triangle"; o.frequency.value=freq;
     var T=actx.currentTime+start;
     g.gain.setValueAtTime(0.0001,T);
     g.gain.exponentialRampToValueAtTime(Math.max(0.0002,vol),T+0.02);
     g.gain.exponentialRampToValueAtTime(0.0001,T+dur);
-    o.connect(g); g.connect(actx.destination);
+    o.connect(g); g.connect(master||actx.destination);
     o.start(T); o.stop(T+dur+0.05);
   }catch(e){}
 }
-function vol(){ return settings.muteAlarm ? 0 : (settings.volume/100)*0.35; }
-function chimeLevel(){ var v=vol(); if(!v) return; audioOn(); tone(784,0,0.28,v); tone(1047,0.22,0.42,v); }
+function vol(){ return settings.muteAlarm ? 0 : (settings.volume/100)*0.95; }
+function chimeLevel(){ var v=vol(); if(!v) return; audioOn(); tone(784,0,0.3,v); tone(1047,0.24,0.5,v); tone(1568,0.24,0.5,v*0.3); }
 function chimeWarn(){ var v=vol(); if(!v) return; audioOn(); tone(660,0,0.18,v*0.75); }
 
 /* ============ wake lock ============ */
