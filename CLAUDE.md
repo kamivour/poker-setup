@@ -10,7 +10,7 @@ A blind timer for home-game poker MTTs, served as a single static HTML file on G
 
 There is no build step, package manager, test suite, or linter. The entire app is `index.html`.
 
-- Run locally: open `index.html` in a browser, or `python -m http.server 8000` from the repo root when you need a real origin (clipboard API, Wake Lock).
+- Run locally: open `index.html` in a browser, or `npx --yes http-server . -p 8000 -c-1` from the repo root when you need a real origin (clipboard API, Wake Lock). `python` is not installed on the dev laptop. Add `-a 0.0.0.0` and open `http://<laptop-LAN-IP>:8000/` on an iPad on the same Wi-Fi to test the working tree there; that origin is plain HTTP, so Wake Lock and the clipboard API stay off on the iPad.
 - Deploy: push to `main`. GitHub Pages serves `main` / `(root)`. The custom domain comes from the `CNAME` file at the repo root — deleting it drops the domain. The `github.io` URL 301s to `www.kamivour.id.vn`, so verify a deploy against the custom domain.
 - Verify a change: reload the page and exercise the affected control. Clock behavior over long runs is only observable in a real browser tab.
 
