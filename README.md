@@ -29,7 +29,7 @@ Tôi tổ chức MTT ở homegame và cần một cái clock chiếu lên iPad h
 - Break là một dòng trong bảng level; khi đang break màn hình đổi sang hiện blind sẽ vào sau khi nghỉ
 - Đếm entries (+/−), tính prize pool đã trừ rake, chia Nhất 70% / Nhì 30%
 - Profile: tạo mới, nhân bản, sửa, xoá; sinh cấu trúc blind tự động từ 4 tham số. Hồ sơ `default` chỉ đọc — muốn khác thì nhân bản ra rồi sửa bản sao
-- 5 theme màu, 2 ngôn ngữ (EN / Tiếng Việt)
+- 5 theme màu, 2 ngôn ngữ (EN / Tiếng Việt). Bốn theme có nền trang trí riêng, đồng hồ đổ bóng nổi và nút điều khiển kiểu kính mờ có vệt sáng lướt qua khi rê chuột hoặc chạm; Midnight giữ nguyên kiểu phẳng 2D cho ai thích tối giản
 - Wake Lock giữ màn hình sáng khi đồng hồ chạy
 - Đánh dấu level cần đổi chip (chip-up); icon chip hiện cạnh số level và ở dòng preview level kế tiếp
 - Lưu giải đang chạy; mở lại trang trong vòng 6 tiếng sẽ hỏi có khôi phục không
@@ -52,7 +52,7 @@ Cố ý để một file. Không có build step, không có dependency ngoài Go
 | Phần | Nội dung |
 |---|---|
 | `<head>` | meta cho iPad (`apple-mobile-web-app-capable`, safe-area), link Google Fonts |
-| `<style>` — themes | Token màu cho 5 theme, đặt trên `:root` và `:root[data-app-theme="..."]` |
+| `<style>` — themes | Token màu và token trang trí (`--decor*`, `--glass*`, `--clock-shadow`) cho 5 theme, đặt trên `:root` và `:root[data-app-theme="..."]` |
 | `<style>` — top bar / stage / stats / modals | CSS theo từng khu vực màn hình |
 | markup | `.app` là grid 3 hàng: topbar / stage / stats. Ba modal nằm ngoài `.app` |
 | `<script>` — i18n | Object `I18N` với 2 khoá `en` và `vi` |
@@ -108,6 +108,8 @@ Giải đang chạy lưu ở `localStorage["pkclock2.run"]` dạng `{v:1, at, pi
 **AudioContext chỉ mở sau cú chạm đầu tiên.** iOS Safari chặn phát âm thanh nếu không có user gesture. Vì vậy chuông báo chỉ kêu nếu người dùng đã bấm ít nhất một nút.
 
 **Chuông trên iPad cần ba thứ, thiếu một là im.** Một, lần chạm đầu tiên phải đẩy được một mẫu âm thanh im lặng qua context — iOS giữ context ở trạng thái câm cho tới khi nó thực sự phát ra cái gì đó trong lúc xử lý cử chỉ. Hai, context phải được gọi `resume()` lại khi rơi vào trạng thái `"interrupted"` (Siri, cuộc gọi, màn hình tắt); iOS không tự thoát khỏi trạng thái này, nên mọi cú chạm trên trang đều gọi `audioOn()`. Ba, iPad phải tắt chế độ im lặng: Web Audio đi qua audio session kiểu ambient, bị công tắc im lặng tắt luôn, và không có cách nào phát hiện điều đó từ JavaScript. Thả thanh âm lượng trong Cài đặt ra sẽ kêu thử một tiếng để kiểm tra cả ba.
+
+**Trang trí theme chỉ bằng CSS, và tắt hẳn ở theme phẳng.** Nền (vignette, ánh đèn, hạt nhiễu) là gradient và SVG nhúng dạng data URI, vẽ lên `body::before` cố định phía sau mọi thứ; hai viên chip đỏ của Royal là nền của `.stage::after`, neo vào góc dưới phải của sân khấu nên luôn nằm gọn trên vạch chia của thanh thống kê, cách xa đồng hồ và các con số tiền thưởng — không có file ảnh, không thêm dependency ngoài, link Google Fonts vẫn là thứ duy nhất tải từ ngoài. Đồng hồ nổi bằng chồng `text-shadow` pha từ màu chữ hiện tại, nên vẫn đúng tông khi chuyển sang màu cảnh báo. Nút điều khiển kính mờ: rê chuột thì nhấc lên và có vệt sáng lướt qua; chạm trên iPad thì vệt sáng chạy bằng class `shine` vì iPad không có hover. Theme Midnight đặt `flat: true` trong `THEMES`, `applyTheme()` gắn class `flat` lên `<html>` và toàn bộ khối CSS trang trí bị bỏ qua — đó là lựa chọn 2D cho ai thích đơn giản. Vì bóng đổ trên chữ cỡ lớn tốn sức vẽ lại, `drawClock()` chỉ đụng DOM khi chuỗi giờ đổi, không phải mỗi nhịp 250 ms.
 
 ### Phím tắt (laptop)
 

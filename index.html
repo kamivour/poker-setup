@@ -25,7 +25,28 @@ img{max-width:100%}
   --accent:#D4A73C; --accent-ink:#1A1206;
   --warn:#E0A64A; --crit:#E0644A;
   --gold:#E3B94A; --silver:#C2C8CE;
+  /* decorated look — see "premium look" in the layout styles. Felt: a lamp
+     over green baize. */
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
+  --decor:
+    radial-gradient(ellipse 65% 50% at 50% -6%,rgba(255,238,190,.12),transparent 70%),
+    radial-gradient(ellipse 85% 80% at 50% 50%,transparent 38%,rgba(0,0,0,.58) 100%),
+    var(--grain);
+  --decor-size:auto,auto,180px 180px;
+  --decor-pos:0 0,0 0,0 0;
+  --decor-rep:no-repeat,no-repeat,repeat;
+  --glass:rgba(255,255,255,.07); --glass-line:rgba(255,255,255,.15); --glass-hi:rgba(255,255,255,.22);
+  --glass-shadow:rgba(0,0,0,.4); --sheen:rgba(255,255,255,.36);
+  --clock-shadow:
+    0 .012em 0 color-mix(in srgb,currentcolor 74%,#000),
+    0 .024em 0 color-mix(in srgb,currentcolor 58%,#000),
+    0 .036em 0 color-mix(in srgb,currentcolor 44%,#000),
+    0 .048em 0 color-mix(in srgb,currentcolor 32%,#000),
+    0 .07em .07em rgba(0,0,0,.5),
+    0 .2em .3em rgba(0,0,0,.4);
 }
+/* Midnight is the flat theme: THEMES marks it flat:true, so none of the
+   decorated-look rules apply and it needs none of those tokens. */
 :root[data-app-theme="midnight"]{
   color-scheme:dark;
   --bg:#0A0D13; --bg2:#0F141C; --surface:#151B25; --line:#242D3B;
@@ -40,6 +61,18 @@ img{max-width:100%}
   --accent:#BE2F33; --accent-ink:#FFF7F5;
   --warn:#B07417; --crit:#A8241F;
   --gold:#B08324; --silver:#8A9097;
+  /* Bone: warm paper under top light, ink lifted off the page. */
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
+  --decor:
+    linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,0) 38%),
+    radial-gradient(ellipse 90% 85% at 50% 50%,transparent 46%,rgba(120,95,55,.2) 100%),
+    var(--grain);
+  --decor-size:auto,auto,180px 180px;
+  --decor-pos:0 0,0 0,0 0;
+  --decor-rep:no-repeat,no-repeat,repeat;
+  --glass:rgba(255,255,255,.62); --glass-line:rgba(60,50,30,.16); --glass-hi:rgba(255,255,255,.95);
+  --glass-shadow:rgba(60,45,20,.2); --sheen:rgba(255,255,255,.9);
+  --clock-shadow:0 .03em .04em rgba(50,40,20,.28),0 .14em .28em rgba(50,40,20,.2);
 }
 :root[data-app-theme="cafe"]{
   color-scheme:dark;
@@ -47,6 +80,17 @@ img{max-width:100%}
   --ink:#F2E5D5; --ink-dim:#C6B09A; --muted:#937A62;
   --accent:#D08A4A; --accent-ink:#1C1109;
   --warn:#DCA55E; --crit:#D4644C;
+  /* Cafe: one amber lamp top-left, embers bottom-right, leather in between. */
+  --decor:
+    radial-gradient(ellipse 60% 55% at 16% -4%,rgba(208,138,74,.22),transparent 70%),
+    radial-gradient(ellipse 55% 45% at 102% 104%,rgba(140,58,24,.34),transparent 70%),
+    radial-gradient(ellipse 90% 85% at 50% 50%,transparent 42%,rgba(0,0,0,.5) 100%),
+    var(--grain);
+  --decor-size:auto,auto,auto,180px 180px;
+  --decor-pos:0 0,0 0,0 0,0 0;
+  --decor-rep:no-repeat,no-repeat,no-repeat,repeat;
+  --glass:rgba(255,225,190,.07); --glass-line:rgba(255,220,180,.17); --glass-hi:rgba(255,232,205,.25);
+  --glass-shadow:rgba(0,0,0,.45); --sheen:rgba(255,236,210,.38);
 }
 :root[data-app-theme="royal"]{
   color-scheme:dark;
@@ -54,6 +98,20 @@ img{max-width:100%}
   --ink:#F8EFE6; --ink-dim:#D6B4AC; --muted:#A0737A;
   --accent:#E0C158; --accent-ink:#1A0E05;
   --warn:#E0C158; --crit:#EE6B5E;
+  /* Royal: gold light at the rim. The two red chips (--chips) are drawn by
+     .stage::after in the premium-look block, resting on the stats divider at
+     the bottom right, clear of the clock and the payouts. The gold frame is
+     body::after, there too. */
+  --chips:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3CradialGradient id='f' cx='.38' cy='.32' r='.8'%3E%3Cstop offset='0' stop-color='%23D9323E'/%3E%3Cstop offset='.55' stop-color='%23A61B27'/%3E%3Cstop offset='1' stop-color='%236E0E17'/%3E%3C/radialGradient%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.42'/%3E%3Cstop offset='1' stop-color='%23fff' stop-opacity='0'/%3E%3C/linearGradient%3E%3Cfilter id='s' x='-30%' y='-30%' width='160%' height='160%'%3E%3CfeGaussianBlur stdDeviation='5'/%3E%3C/filter%3E%3C/defs%3E%3Cg opacity='.85'%3E%3Cellipse cx='74' cy='84' rx='62' ry='58' fill='%23000' opacity='.55' filter='url(%23s)'/%3E%3Cg transform='rotate(14 70 74)'%3E%3Ccircle cx='70' cy='74' r='60' fill='%238F1420'/%3E%3Ccircle cx='70' cy='74' r='55.5' fill='none' stroke='%23F1E2C6' stroke-width='9' stroke-dasharray='15.7 27.9'/%3E%3Ccircle cx='70' cy='74' r='51' fill='url(%23f)'/%3E%3Ccircle cx='70' cy='74' r='37' fill='none' stroke='%23E0C158' stroke-width='1.8' opacity='.9'/%3E%3Ccircle cx='70' cy='74' r='32' fill='none' stroke='%23E0C158' stroke-width='.8' opacity='.5'/%3E%3C/g%3E%3Cellipse cx='128' cy='130' rx='68' ry='64' fill='%23000' opacity='.6' filter='url(%23s)'/%3E%3Cg transform='rotate(-9 124 120)'%3E%3Ccircle cx='124' cy='120' r='66' fill='%238F1420'/%3E%3Ccircle cx='124' cy='120' r='61' fill='none' stroke='%23F1E2C6' stroke-width='10' stroke-dasharray='17.2 30.7'/%3E%3Ccircle cx='124' cy='120' r='56' fill='url(%23f)'/%3E%3Ccircle cx='124' cy='120' r='41' fill='none' stroke='%23E0C158' stroke-width='2' opacity='.9'/%3E%3Ccircle cx='124' cy='120' r='35.5' fill='none' stroke='%23E0C158' stroke-width='.9' opacity='.5'/%3E%3Cellipse cx='108' cy='92' rx='34' ry='16' fill='url(%23h)' transform='rotate(-28 108 92)'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  --decor:
+    radial-gradient(ellipse 85% 80% at 50% 50%,transparent 52%,rgba(224,193,88,.14) 100%),
+    radial-gradient(ellipse 70% 45% at 50% -8%,rgba(255,214,120,.09),transparent 70%),
+    var(--grain);
+  --decor-size:auto,auto,180px 180px;
+  --decor-pos:0 0,0 0,0 0;
+  --decor-rep:no-repeat,no-repeat,repeat;
+  --glass:rgba(255,235,200,.06); --glass-line:rgba(224,193,88,.32); --glass-hi:rgba(255,240,200,.3);
+  --glass-shadow:rgba(0,0,0,.5); --sheen:rgba(255,240,200,.46);
 }
 
 *,*::before,*::after{box-sizing:border-box}
@@ -69,7 +127,7 @@ button{font:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transp
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 .svgi{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
-.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;padding:0 16px}
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;padding:0 16px;--stats-gap:clamp(10px,2.4vh,26px)}
 
 /* ---------- top bar ---------- */
 .topbar{display:flex;align-items:center;gap:12px;padding-block:12px;min-height:58px}
@@ -118,7 +176,7 @@ button{font:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transp
   font-size:clamp(17px,min(4.6vw,3.2vh),27px)}
 
 /* ---------- stats ---------- */
-.stats{display:grid;grid-template-columns:1fr 1.15fr 1.5fr;border-top:1px solid var(--line);margin-top:clamp(10px,2.4vh,26px);padding-block:14px}
+.stats{display:grid;grid-template-columns:1fr 1.15fr 1.5fr;border-top:1px solid var(--line);margin-top:var(--stats-gap);padding-block:14px}
 .stat{padding:0 clamp(10px,1.6vw,20px);border-left:1px solid var(--line);min-width:0;display:flex;flex-direction:column;gap:6px}
 .stat:first-child{border-left:0;padding-left:0}
 .slabel{font-size:clamp(11px,1.5vh,14px);letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600}
@@ -141,6 +199,73 @@ button{font:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transp
   .stat{border-left:0;padding:0}
   .stat:nth-child(2){padding-left:14px;border-left:1px solid var(--line)}
   .stat:nth-child(3){grid-column:1 / -1;border-top:1px solid var(--line);padding-top:14px}
+}
+
+/* ---------- premium look ----------
+   Skipped entirely on flat themes: applyTheme() puts .flat on <html> for any
+   THEMES entry with flat:true, and every rule here is scoped to html:not(.flat).
+   The backdrop is painted on body::before (fixed, behind everything, no pointer
+   events), so it can never add scroll or steal a tap. Gradients and inline SVG
+   only — no image files. */
+body::before,body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none}
+body::before{background-image:var(--decor);background-size:var(--decor-size);background-position:var(--decor-pos);background-repeat:var(--decor-rep)}
+body::after{display:none}
+html.flat body::before{display:none}
+/* Royal: a thin double gold frame inside the safe area, like a table rail. */
+:root[data-app-theme="royal"]:not(.flat) body::after{display:block;inset:calc(env(safe-area-inset-top,0px) + 10px) 10px calc(env(safe-area-inset-bottom,0px) + 10px);border:1px solid rgba(224,193,88,.3);border-radius:8px;outline:1px solid rgba(224,193,88,.12);outline-offset:4px}
+/* Royal: the chips hang off the right edge and rest on the stats divider.
+   They are the background of a box anchored to the stage, so they follow the
+   stats bar whatever its height. The box ends at the viewport edge and the
+   image overflows it, which crops the chips without adding horizontal
+   scroll. The visible width is a slice of the viewport width, which is what
+   keeps them off the ante figures on a 4:3 landscape screen; portrait has
+   more room beside the transport, so the slice is wider there. */
+:root[data-app-theme="royal"]:not(.flat) .stage{position:relative}
+:root[data-app-theme="royal"]:not(.flat) .stage::after{content:"";position:absolute;z-index:-1;pointer-events:none;
+  --chip:min(17vw,38vmin,30vh);--crop:8vmin;
+  right:-16px;bottom:calc(-1 * var(--stats-gap));width:var(--chip);height:calc(var(--chip) + var(--crop));
+  background:var(--chips) left bottom/calc(var(--chip) + var(--crop)) no-repeat}
+@media (orientation:portrait){ :root[data-app-theme="royal"]:not(.flat) .stage::after{--chip:min(24vw,22vh)} }
+
+/* Clock: stacked shadows in the digit colour give a solid, extruded face. */
+html:not(.flat) .clock{text-shadow:var(--clock-shadow)}
+
+/* Glass. Only the transport lifts and shines; the pill and the counters just
+   share the surface so the screen reads as one material. */
+html:not(.flat) .pill,html:not(.flat) .cbtn{background-color:var(--glass);border-color:var(--glass-line);box-shadow:inset 0 1px 0 var(--glass-hi)}
+html:not(.flat) .tbtn{position:relative;overflow:hidden;
+  background-color:var(--glass);background-image:linear-gradient(165deg,var(--glass-hi) -20%,transparent 45%);
+  border-color:var(--glass-line);
+  box-shadow:inset 0 1px 0 var(--glass-hi),inset 0 -1px 0 rgba(0,0,0,.18),0 6px 16px -4px var(--glass-shadow);
+  backdrop-filter:blur(12px) saturate(140%);-webkit-backdrop-filter:blur(12px) saturate(140%);
+  transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s,border-color .18s,color .18s}
+html:not(.flat) .tbtn.reset.armed{border-color:var(--crit)}
+html:not(.flat) .tbtn.primary{background-color:var(--accent);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0) 55%,rgba(0,0,0,.1));
+  border-color:color-mix(in srgb,var(--accent) 65%,#fff);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -2px 0 rgba(0,0,0,.16),0 10px 24px -6px color-mix(in srgb,var(--accent) 60%,transparent),0 6px 14px -4px var(--glass-shadow);
+  backdrop-filter:none;-webkit-backdrop-filter:none}
+/* Sheen: a soft diagonal band that sweeps across the button once. Hover
+   starts it on pointer devices; a tap adds .shine (see the controls script). */
+html:not(.flat) .tbtn::after{content:"";position:absolute;top:-30%;bottom:-30%;left:-60%;width:60%;
+  background:linear-gradient(105deg,transparent 20%,var(--sheen) 50%,transparent 80%);
+  transform:skewX(-18deg);opacity:0;pointer-events:none}
+html:not(.flat) .tbtn.shine::after{animation:sheen .7s cubic-bezier(.3,.6,.3,1)}
+@keyframes sheen{0%{transform:translateX(0) skewX(-18deg);opacity:0}20%{opacity:1}100%{transform:translateX(320%) skewX(-18deg);opacity:0}}
+@media (hover:hover){
+  html:not(.flat) .tbtn:hover{transform:translateY(-3px);border-color:var(--glass-hi);
+    box-shadow:inset 0 1px 0 var(--glass-hi),inset 0 -1px 0 rgba(0,0,0,.18),0 14px 26px -6px var(--glass-shadow)}
+  html:not(.flat) .tbtn:hover::after{animation:sheen .7s cubic-bezier(.3,.6,.3,1)}
+  html:not(.flat) .tbtn.primary:hover{border-color:color-mix(in srgb,var(--accent) 45%,#fff);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 0 rgba(0,0,0,.16),0 16px 34px -6px color-mix(in srgb,var(--accent) 70%,transparent),0 12px 22px -6px var(--glass-shadow)}
+}
+html:not(.flat) .tbtn:active{transform:translateY(0) scale(.95);transition-duration:.06s}
+/* Stats: the divider fades out at both ends instead of running edge to edge. */
+html:not(.flat) .stats{border-top-color:transparent;background:linear-gradient(90deg,transparent,var(--line) 15%,var(--line) 85%,transparent) top/100% 1px no-repeat}
+@media (prefers-reduced-motion:reduce){
+  html:not(.flat) .tbtn{transition:none}
+  html:not(.flat) .tbtn:hover,html:not(.flat) .tbtn:active{transform:none}
+  html:not(.flat) .tbtn:hover::after,html:not(.flat) .tbtn.shine::after{animation:none}
 }
 
 /* ---------- modals ---------- */
@@ -550,7 +675,7 @@ var I18N = {
 
 var THEMES = [
   {id:"felt",    name:"Felt",     bg:"#0B1410", ink:"#F3EFE3", accent:"#D4A73C"},
-  {id:"midnight",name:"Midnight", bg:"#0A0D13", ink:"#E9EDF4", accent:"#6AA9E0"},
+  {id:"midnight",name:"Midnight", bg:"#0A0D13", ink:"#E9EDF4", accent:"#6AA9E0", flat:true},
   {id:"bone",    name:"Bone",     bg:"#F1EFE8", ink:"#201E1A", accent:"#BE2F33"},
   {id:"cafe",    name:"Cafe",     bg:"#191210", ink:"#F2E5D5", accent:"#D08A4A"},
   {id:"royal",   name:"Royal",    bg:"#170609", ink:"#F8EFE6", accent:"#E0C158"}
@@ -752,7 +877,13 @@ function mmss(sec){
   var m=Math.floor(sec/60), s=sec%60;
   return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
 }
+var lastClockStr="";
 function drawClock(str){
+  /* The decorated clock stacks several text-shadows on the largest text on
+     the page, so repainting it is the most expensive thing the page does.
+     Only touch the DOM when the digits change, not on every 250 ms tick. */
+  if(str===lastClockStr) return;
+  lastClockStr=str;
   var out="";
   for(var i=0;i<str.length;i++){
     var ch=str.charAt(i);
@@ -860,6 +991,9 @@ function applyLang(){
 
 function applyTheme(){
   document.documentElement.setAttribute("data-app-theme", settings.theme);
+  var th=THEMES.filter(function(x){ return x.id===settings.theme; })[0];
+  /* Flat themes keep the plain 2D look: no backdrop, no clock extrusion, no glass. */
+  document.documentElement.classList.toggle("flat", !!(th && th.flat));
   var sw=$("swatches").children;
   for(var i=0;i<sw.length;i++){
     var b=sw[i].querySelector(".sw");
@@ -918,6 +1052,18 @@ setInterval(function(){
 $("btnPlay").onclick=toggle;
 clockEl.onclick=toggle;
 clockEl.onkeydown=function(e){ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); toggle(); } };
+/* The sheen sweep also plays on a tap, since the iPad has no hover. The class
+   is dropped when the animation ends so the next tap can restart it; the
+   forced reflow in between restarts it even on a quick double tap. */
+(function(){
+  var bs=document.querySelectorAll(".tbtn");
+  function shine(){ this.classList.remove("shine"); void this.offsetWidth; this.classList.add("shine"); }
+  function done(){ this.classList.remove("shine"); }
+  for(var i=0;i<bs.length;i++){
+    bs[i].addEventListener("pointerdown", shine, {passive:true});
+    bs[i].addEventListener("animationend", done);
+  }
+})();
 $("btnPrev").onclick=function(){ loadLevel(state.idx-1); };
 $("btnNext").onclick=function(){ loadLevel(state.idx+1); };
 $("btnRestart").onclick=function(){ loadLevel(state.idx); };
