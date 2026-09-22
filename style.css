@@ -2,7 +2,7 @@
    Sections, in order: base → theme tokens → layout (top bar, stage, stats)
    → decorated look → motion → modals → reduced motion.
    The decorated look is scoped to html:not(.flat); app.js puts .flat on <html>
-   for any THEMES entry with flat:true (Midnight), which keeps the plain 2D look.
+   for any THEMES entry with flat:true (Minimal), which keeps the plain 2D look.
    The animated backdrop is the #fx canvas painted by fx.js; html.nofx means
    WebGL was unavailable and the CSS gradient in --decor is shown instead. */
 

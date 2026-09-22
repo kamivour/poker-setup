@@ -15,7 +15,7 @@
    first. Mirrors applyTheme() in app.js: the settings key and the flat theme. */
 try{var s=JSON.parse(localStorage.getItem("pkclock2.settings"));if(s&&s.theme){document.documentElement.setAttribute("data-app-theme",s.theme);if(s.theme==="minimal")document.documentElement.classList.add("flat");}}catch(e){}
 </script>
-<link rel="stylesheet" href="style.css?v=20260922">
+<link rel="stylesheet" href="style.css?v=20260922b">
 </head>
 <body>
 <canvas id="fx" aria-hidden="true"></canvas>
@@ -245,8 +245,8 @@ try{var s=JSON.parse(localStorage.getItem("pkclock2.settings"));if(s&&s.theme){d
   </div>
 </div>
 
-<script src="fx.js?v=20260922"></script>
-<script src="app.js?v=20260922"></script>
+<script src="fx.js?v=20260922b"></script>
+<script src="app.js?v=20260922b"></script>
 
 </body>
 </html>

@@ -45,10 +45,15 @@ Tôi tổ chức MTT ở homegame và cần một cái clock chiếu lên iPad h
 ├── style.css      # toàn bộ CSS: token theme, layout, chất liệu đồng hồ, chuyển động
 ├── app.js         # toàn bộ logic của clock — một IIFE ES5, không module, không framework
 ├── fx.js          # nền chuyển động: một fragment shader WebGL, GLSL nhúng dạng chuỗi
+├── docs/
+│   └── implementation.md   # tài liệu kỹ thuật: dùng công nghệ gì, làm thế nào, vì sao
+├── CNAME          # tên miền riêng cho GitHub Pages
 └── README.md      # file này
 ```
 
 Không có build step, không package manager, không dependency ngoài Google Fonts. Sửa xong thì push, GitHub Pages tự deploy. Một quy tắc duy nhất: **mỗi lần sửa `style.css`, `app.js` hay `fx.js` phải đổi số `?v=` ở ba link trong `index.html`** — GitHub Pages cache tài nguyên 10 phút và Safari trên iPad giữ lâu hơn, không đổi thì markup mới lên nhưng iPad vẫn chạy script cũ.
+
+**Chi tiết kỹ thuật nằm ở [`docs/implementation.md`](docs/implementation.md).** README trả lời "cái này là gì, còn thiếu gì"; tài liệu kia trả lời "nó hoạt động ra sao" — từng token CSS, từng nhánh shader, từng hàm trong `app.js`, và lý do đằng sau. Bảng dưới đây chỉ là bản đồ nhanh.
 
 ### Bố cục các file
 
@@ -172,3 +177,7 @@ Tên miền do file `CNAME` ở gốc repo giữ, nội dung đúng một dòng 
 Bản ghi DNS ở Tenten: `www` là CNAME trỏ về `kamivour.github.io`, apex là bốn bản ghi A của GitHub Pages. GitHub định tuyến domain theo repo ở tầng hạ tầng chứ không phải ở tầng DNS, nên khi đổi repo phục vụ tên miền thì không cần đụng gì đến DNS — chỉ cần repo cũ nhả tên miền ra (xoá `CNAME` của nó và bỏ custom domain trong Settings → Pages của nó), rồi repo mới nhận.
 
 `kamivour.github.io/poker-setup` giờ trả 301 về `www.kamivour.id.vn`.
+
+### Chạy thử tại chỗ
+
+Mở thẳng `index.html` bằng trình duyệt là đủ cho hầu hết việc sửa. Cần một origin thật (Clipboard API, Wake Lock) thì chạy `npx --yes http-server . -p 8000 -c-1` ở gốc repo. Thêm `-a 0.0.0.0` rồi mở `http://<IP-LAN-của-laptop>:8000/` trên iPad cùng Wi-Fi để thử cử chỉ chạm — origin đó là HTTP trần nên Wake Lock và Clipboard API vẫn tắt trên iPad.

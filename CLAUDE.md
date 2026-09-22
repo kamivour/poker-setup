@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A blind timer for home-game poker MTTs: a static site of four files (`index.html`, `style.css`, `app.js`, `fx.js`) served by GitHub Pages at `www.kamivour.id.vn`. The README (in Vietnamese) holds the design rationale and a detailed "not yet implemented" backlog — read it before proposing features, since several omissions are deliberate.
 
+`docs/implementation.md` (also Vietnamese) is the long-form technical reference: every CSS token, every shader branch, every function in `app.js`, and the reason behind each. This file is the working summary; when the two disagree, the code wins and both should be corrected. **Keep `docs/implementation.md` in step with any change that alters behaviour it describes.**
+
 ## Commands
 
 There is no build step, package manager, test suite, or linter. Plain HTML, CSS and ES5; the GLSL lives inside `fx.js` as strings, so the page also runs from `file://`.
@@ -34,7 +36,7 @@ Three module-level values hold everything: `settings`, `profiles` (+ `activeId`)
 
 ### Level list
 
-`profile().levels` is a flat array mixing two row shapes: blind rows `{sb, bb, ante, min}` and break rows `{brk: true, min}`. A blind row may also carry `chipup: true`, which marks the level where small chips get coloured up; it renders as a chip glyph next to the level number and in the next-level preview, and is toggled per row in the editor. `state.idx` indexes this array directly, so breaks consume an index. Use `levelNumber(i)` for the displayed number (skips breaks) and `nextPlayableAfter(i)` for the blinds shown during a break.
+`profile().levels` is a flat array mixing two row shapes: blind rows `{sb, bb, ante, min}` and break rows `{brk: true, min}`. A blind row may also carry `chipup: true`, which marks the level where small chips get coloured up; it renders as a chip glyph next to the level number and in the next-level preview, and is toggled per row in the editor. `state.idx` indexes this array directly, so breaks consume an index. Use `levelNumber(i)` for the displayed number (skips breaks), `nextPlayableAfter(i)` for the blinds shown during a break, and `durSec(i)` for the level length in seconds (floor of 1 s).
 
 ### Storage
 
@@ -43,6 +45,10 @@ Three module-level values hold everything: `settings`, `profiles` (+ `activeId`)
 The `pkclock2` prefix is a schema version. If the default profile shape changes incompatibly, bump the whole namespace to `pkclock3` rather than migrating in place — that is how stale saved profiles are prevented from overwriting new defaults.
 
 Export/import moves profiles between devices as `{v: 1, profiles: [...]}` JSON through a textarea. Import replaces the entire profile list and re-inserts a `default` profile if the payload lacks one.
+
+### Warning thresholds
+
+The 250 ms interval chimes the one-minute warning at `r <= 60` once per level (`state.warned`, cleared by `loadLevel()`), and `render()` sets `.warn` on the clock below 60 s and `.crit` below 10 s. Both numbers are constants in the code, not settings.
 
 ### Motion
 
@@ -66,6 +72,7 @@ All motion is transforms and opacity, so nothing repaints text on a tick. `drawC
 - **New theme:** append to the `THEMES` array *and* add a matching `:root[data-app-theme="<id>"]` token block in `style.css`, including the decorated-look tokens (`--decor`, `--glass*`, `--sheen`, `--clock-ink`, `--clock-fx`, `--num-fx`; copy a dark theme's block and adjust), *and* give it a shader branch in `fx.js`: a `<theme>(p, q, t, ...)` GLSL function, a case in `paint()` and an entry in `SLOT`. Or set `flat: true` on the `THEMES` entry to opt the theme out of the decorated rules, the clock material and the backdrop altogether, and add its id to the inline head script in `index.html`. Set `--clock-ink` even on a flat theme, or Felt's value on `:root` leaks through. Swatches are generated from `THEMES`.
 - **New keyboard shortcut:** extend the `document` `keydown` handler, which already returns early for form fields and routes `Escape` to `closeAll()` while an overlay is open.
 - Money and blind values render through `nf()` / `money()`; currency is a per-profile string, not a locale.
+- **Touch input in the editor:** `COARSE` (`matchMedia("(hover:none) and (pointer:coarse)")`) makes every number input `readOnly` and opens the value wheel on tap; on a laptop the input types normally and the wheel opens from the `.wchev` chevron. The wheel commits 90 ms after the scroll settles, not on every scroll event. Break rows drag with **Touch Events, not Pointer Events** — iOS Safari cancels a captured pointer as soon as it suspects a scroll.
 - The level generator (`btnGenerate`) and `+ Level` both snap values through `roundChip()`, which picks a rounding step by magnitude.
 
 ## Deliberately rejected
